@@ -178,7 +178,21 @@ class ToolRegistry {
 				try {
 					if (WriteGate::isWrite($definition) && !WriteGate::confirmed($arguments)) {
 						$plan = WriteGate::plan($module, $definition, $arguments, $userId);
-						return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
+						// Direct execution for the first audited file operations. An explicit
+						// confirm=false still requests a dry run. Shared-resource approval
+						// and all native permission checks remain in force.
+						$direct = !array_key_exists(WriteGate::CONFIRM, $arguments)
+							&& in_array($name, ['files_checkout', 'files_move_batch'], true)
+							&& ($plan['requiresSharedConfirmation'] ?? false) !== true
+							&& empty($plan['shared']);
+						if (!$direct) {
+							return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
+						}
+						$arguments[WriteGate::CONFIRM] = true;
+						if ($name === 'files_checkout' && !isset($arguments['etag']) && isset($plan['etag'])) {
+							$arguments['etag'] = $plan['etag'];
+						}
+						$arguments = ArgumentValidator::validate($published['inputSchema'], $arguments);
 					}
 					$result = $module->call($name, $arguments, $userId);
 				} catch (InvalidArgumentException $e) {
