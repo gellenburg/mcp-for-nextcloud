@@ -45,34 +45,27 @@ final class McpDeckDependencyWritesTest extends IntegrationTestCase {
 		DeckFixture::run(DeckFixture::OWNER, 'dependency-native-link', ['origin' => $a, 'target' => $b, 'remove' => $remove]);
 	}
 
-	public function testPreviewConfirmedNativeUiStateIdempotenceAndUnrelatedPreservation(): void {
+	public function testPreviewAndDirectNativeUiStateIdempotenceAndUnrelatedPreservation(): void {
 		$f = $this->seed();
 		if ($f === null) { return; }
 		foreach ([DeckFixture::OWNER, DeckFixture::EDITOR] as $uid) {
 			$this->native($f['a'], $f['privateCard']);
 			$args = ['cardId' => $f['a'], 'targetId' => $f['b']];
-			$p = $this->data($this->call($uid, $args));
+			$p = $this->data($this->call($uid, $args + ['confirm' => false]));
 			self::assertTrue($p['requiresConfirmation']);
 			self::assertSame([$f['privateCard']], $this->ids($f));
-			$confirmed = $args + ['confirm' => true, 'plan_state' => $p['plan_state']];
-			if ($uid === DeckFixture::EDITOR) {
-				self::assertSame('shared', $this->data($this->call($uid, $confirmed))['scope']);
-				self::assertSame([$f['privateCard']], $this->ids($f));
-			}
-			$r = $this->data($this->call($uid, $confirmed + ['confirm_shared' => true]));
+			$r = $this->data($this->call($uid, $args));
 			self::assertTrue($r['confirmed']);
-			$p = $this->data($this->call($uid, $args));
-			$r = $this->data($this->call($uid, $args + ['confirm' => true, 'confirm_shared' => true, 'plan_state' => $p['plan_state']]));
-			self::assertFalse($r['changed']);
+			self::assertTrue($r['changed']);
+			self::assertFalse($this->data($this->call($uid, $args))['changed']);
 			$expected = [$f['b'], $f['privateCard']]; sort($expected);
 			self::assertSame($expected, $this->ids($f), 'Native cardinality after duplicate');
-			$p = $this->data($this->call($uid, $args, true));
-			self::assertTrue($this->data($this->call($uid, $args + ['confirm' => true, 'confirm_shared' => true,
-				'plan_state' => $p['plan_state']], true))['confirmed']);
+			$p = $this->data($this->call($uid, $args + ['confirm' => false], true));
+			self::assertTrue($p['requiresConfirmation']);
+			self::assertSame($expected, $this->ids($f), 'Removal preview does not change relations');
+			self::assertTrue($this->data($this->call($uid, $args, true))['confirmed']);
 			self::assertSame([$f['privateCard']], $this->ids($f), 'Native UI keeps unrelated link');
-			$p = $this->data($this->call($uid, $args, true));
-			self::assertFalse($this->data($this->call($uid, $args + ['confirm' => true, 'confirm_shared' => true,
-				'plan_state' => $p['plan_state']], true))['changed']);
+			self::assertFalse($this->data($this->call($uid, $args, true))['changed']);
 		}
 	}
 
@@ -97,13 +90,11 @@ final class McpDeckDependencyWritesTest extends IntegrationTestCase {
 		$args = ['cardId' => $f['a'], 'targetId' => $f['b']];
 		$this->native($f['b'], $f['privateCard']);
 		$this->native($f['privateCard'], $f['a']);
-		$before = $this->call(DeckFixture::EDITOR, $args);
+		$before = $this->call(DeckFixture::EDITOR, $args + ['confirm' => false]);
 		$this->native($f['b'], $f['privateCard'], true);
-		self::assertSame($before['result'], $this->call(DeckFixture::EDITOR, $args)['result'], 'Includes identical opaque plan_state');
+		self::assertSame($before['result'], $this->call(DeckFixture::EDITOR, $args + ['confirm' => false])['result'], 'Includes identical opaque plan_state');
 		$this->native($f['b'], $f['privateCard']);
-		$p = $this->data($before);
-		$r = $this->data($this->call(DeckFixture::EDITOR, $args + ['confirm' => true, 'confirm_shared' => true,
-			'plan_state' => $p['plan_state']]));
+		$r = $this->data($this->call(DeckFixture::EDITOR, $args));
 		self::assertTrue($r['confirmed']);
 		self::assertStringContainsString('cards you cannot read', $r['message']);
 		self::assertStringContainsString('those cards', $r['message']);
@@ -116,7 +107,7 @@ final class McpDeckDependencyWritesTest extends IntegrationTestCase {
 		}
 	}
 
-	public function testChangedRelationGraphRevocationDeletionAndGrantRequireFreshApproval(): void {
+	public function testStaleRelationStateAndRevokedPermissionsRefuseWrites(): void {
 		foreach (['relation', 'graph', 'label-revoke', 'trash-reference', 'target-revoke', 'card-archive', 'board-archive', 'grant'] as $change) {
 			$f = $this->seed(); if ($f === null) { return; }
 			$target = in_array($change, ['trash-reference', 'target-revoke'], true) ? $f['privateCard'] : $f['b'];
@@ -124,7 +115,7 @@ final class McpDeckDependencyWritesTest extends IntegrationTestCase {
 				DeckFixture::run(DeckFixture::OWNER, 'dependency-private-access', $f + ['allow' => true]);
 			}
 			$args = ['cardId' => $f['a'], 'targetId' => $target];
-			$p = $this->data($this->call(DeckFixture::EDITOR, $args));
+			$p = $this->data($this->call(DeckFixture::EDITOR, $args + ['confirm' => false]));
 			if ($change === 'relation') { $this->native($f['a'], $target); }
 			elseif ($change === 'graph') { $this->native($target, $f['a']); }
 			elseif ($change === 'target-revoke') {

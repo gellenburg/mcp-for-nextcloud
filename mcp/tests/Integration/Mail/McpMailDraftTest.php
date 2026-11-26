@@ -92,12 +92,12 @@ final class McpMailDraftTest extends IntegrationTestCase {
 		$outbox = $this->select('mail_local_messages', 'account_id', $own, 'id');
 
 		self::markCell('ml7-draft-start');
-		$plan = $this->call([self::TOOL, $arguments]);
+		$plan = $this->call([self::TOOL, $arguments + ['confirm' => false]]);
 		$this->assertTrue($plan['structuredContent']['requiresConfirmation']);
 		$this->assertSame(['accountId' => $own, 'draftsMailboxId' => $drafts, 'account' => 'alice@example.com', 'draftsPath' => 'Drafts'], $plan['structuredContent']['target']);
 		$this->assertSame($before, $imap->state(), 'a plan saves nothing');
 
-		$done = $this->decoded($this->confirm($plan, $arguments));
+		$done = $this->decoded($this->execute($arguments));
 		$this->assertSame([true, false, $drafts], [$done['created'], $done['sent'], $done['draftsMailboxId']]);
 		$this->assertIsInt($done['uid'], 'the server tells the new UID (APPENDUID)');
 		$after = $imap->state();
@@ -111,7 +111,7 @@ final class McpMailDraftTest extends IntegrationTestCase {
 		$others = static fn (array $state): array => array_diff_key($state, ['Drafts' => 0]);
 		$this->assertSame($others($before), $others($after), 'every other folder, Sent included, is untouched');
 
-		$this->decoded($this->confirm($plan, $arguments));
+		$this->decoded($this->execute($arguments));
 		$this->assertSame($before['Drafts']['exists'] + 2, $imap->state()['Drafts']['exists'], 'confirming the same plan again creates a second draft');
 
 		$current = $imap->state();
@@ -135,14 +135,13 @@ final class McpMailDraftTest extends IntegrationTestCase {
 	}
 
 	/**
-	 * The confirmed call of a plan.
+	 * Execute an authorized write directly.
 	 *
-	 * @param array<string, mixed> $plan the MCP result of the plan
 	 * @param array<string, mixed> $arguments the arguments of the plan
-	 * @return array<string, mixed> the MCP result of the confirmed call
+	 * @return array<string, mixed> the MCP result of the direct call
 	 */
-	private function confirm(array $plan, array $arguments): array {
-		$result = $this->call([self::TOOL, $arguments + ['confirm' => true, PlanState::ARGUMENT => $plan['structuredContent'][PlanState::ARGUMENT]]]);
+	private function execute(array $arguments): array {
+		$result = $this->call([self::TOOL, $arguments]);
 		$this->assertArrayNotHasKey('isError', $result, json_encode($result, JSON_THROW_ON_ERROR));
 		return $result;
 	}

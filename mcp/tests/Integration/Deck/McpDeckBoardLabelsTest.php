@@ -21,11 +21,9 @@ final class McpDeckBoardLabelsTest extends IntegrationTestCase {
 	private function call(string $tool, array $args, string $actor = DeckFixture::OWNER, bool $grant = true): array {
 		return DeckFixture::run($actor, 'board-label-call', ['tool' => $tool, 'arguments' => $args, 'grant' => $grant]);
 	}
-	/** @param string $tool Tool. @param array $args Arguments. @return array Confirmed payload after a real preview. */
+	/** @param string $tool Tool. @param array $args Arguments. @return array Payload from a direct authorized write. */
 	private function write(string $tool, array $args): array {
-		$plan = $this->payload($this->call($tool, $args));
-		self::assertTrue($plan['requiresConfirmation']);
-		return $this->payload($this->call($tool, $args + ['confirm' => true, 'plan_state' => $plan['plan_state']]));
+		return $this->payload($this->call($tool, $args));
 	}
 	/** @param array $fixture Owned ledger. @param array $ids Cards to inspect. @return array Native state in a fresh process. */
 	private function inspect(array $fixture, array $ids = []): array {
@@ -41,7 +39,7 @@ final class McpDeckBoardLabelsTest extends IntegrationTestCase {
 			self::assertTrue($denied['refused']);
 			self::assertNotContains('deck_create_label', $denied['tools']);
 			self::assertSame($before, $this->inspect($f));
-			$plan = $this->payload($this->call('deck_create_label', $args));
+			$plan = $this->payload($this->call('deck_create_label', $args + ['confirm' => false]));
 			self::assertTrue($plan['requiresConfirmation']);
 			self::assertSame($before, $this->inspect($f));
 			$created = $this->write('deck_create_label', $args);
@@ -56,10 +54,10 @@ final class McpDeckBoardLabelsTest extends IntegrationTestCase {
 				self::assertTrue($refused['result']['isError']);
 			}
 			$cardArgs = ['stackId' => $f['stackId'], 'title' => 'Synthetic card', 'labels' => [$id, 'New synthetic label']];
-			$denied = $this->call('deck_create_card', $cardArgs + ['confirm' => true], grant: false);
+			$denied = $this->call('deck_create_card', $cardArgs, grant: false);
 			self::assertTrue($denied['result']['isError']);
 			self::assertSame(0, $this->inspect($f)['cardCount']);
-			$plan = $this->payload($this->call('deck_create_card', $cardArgs));
+			$plan = $this->payload($this->call('deck_create_card', $cardArgs + ['confirm' => false]));
 			self::assertTrue($plan['requiresConfirmation']);
 			self::assertSame(0, $this->inspect($f)['cardCount']);
 			self::assertNotContains('New synthetic label', array_column($this->inspect($f)['labels'], 'title'));

@@ -90,33 +90,33 @@ final class McpMailFlagsTest extends IntegrationTestCase {
 		$before = $imap->state();
 
 		self::markCell('ml5-flags-start');
-		$plan = $this->call([self::TOOL, ['message_id' => $bySubject['Flag target'], 'seen' => true]]);
+		$plan = $this->call([self::TOOL, ['message_id' => $bySubject['Flag target'], 'seen' => true] + ['confirm' => false]]);
 		$this->assertTrue($plan['structuredContent']['requiresConfirmation']);
 		$this->assertArrayNotHasKey('subject', $plan['structuredContent']['target'], 'no subject without mail.messages');
 		$this->assertSame($before, $imap->state(), 'a plan changes nothing on the server');
 
-		$this->confirm($plan, ['message_id' => $bySubject['Flag target'], 'seen' => true]);
+		$this->execute(['message_id' => $bySubject['Flag target'], 'seen' => true]);
 		$expected = $before;
 		$expected['Flags']['flags'][$uid($bySubject['Flag target'])] = ['\\Seen'];
 		$this->assertSameExceptModseq($expected, $imap->state(), 'only \\Seen of the target changed');
 		$this->assertSame(1, (int)$this->select('mail_messages', 'id', $bySubject['Flag target'], 'id')[0]['flag_seen'], 'the Mail cache follows');
 
 		$both = [self::TOOL, ['message_id' => $bySubject['Flag both'], 'flagged' => false]];
-		$this->confirm($this->call($both), $both[1]);
+		$this->execute($both[1]);
 		$expected['Flags']['flags'][$uid($bySubject['Flag both'])] = ['\\Answered', '\\Seen'];
 		$this->assertSameExceptModseq($expected, $imap->state(), 'only \\Flagged of the other message was removed');
 
 		$current = $imap->state();
 		$already = [self::TOOL, ['message_id' => $bySubject['Flag already read'], 'seen' => true]];
-		$done = $this->confirm($this->call($already), $already[1]);
+		$done = $this->execute($already[1]);
 		$this->assertSame([], json_decode($done['content'][0]['text'], true)['changed']);
 		$this->assertSame($current, $imap->state(), 'an already-set flag changes nothing, not even a modification sequence');
 
-		$other = $this->call([self::TOOL, ['message_id' => $bySubject['Flag target HTTP'], 'flagged' => true]]);
+		$other = $this->call([self::TOOL, ['message_id' => $bySubject['Flag target HTTP'], 'flagged' => true] + ['confirm' => false]]);
 		$wrong = $this->call([self::TOOL, ['message_id' => $bySubject['Flag target HTTP'], 'seen' => true, 'confirm' => true, PlanState::ARGUMENT => $other['structuredContent'][PlanState::ARGUMENT]]]);
 		$this->assertSame(MailFlagMessages::planChanged(), $wrong['structuredContent']['warnings'][0]['message'], 'the plan of other arguments confirms nothing');
 
-		$stale = $this->call([self::TOOL, ['message_id' => $regen, 'seen' => true]]);
+		$stale = $this->call([self::TOOL, ['message_id' => $regen, 'seen' => true] + ['confirm' => false]]);
 		$refused = $this->call([self::TOOL, ['message_id' => $regen, 'seen' => true, 'confirm' => true, PlanState::ARGUMENT => $stale['structuredContent'][PlanState::ARGUMENT]]]);
 		$this->assertSame(['content' => [['type' => 'text', 'text' => MailMessages::messageChanged()]], 'isError' => true], $refused, 'never on a UID of another generation');
 		$missing = $this->call([self::TOOL, ['message_id' => $foreign, 'seen' => true]]);
@@ -155,14 +155,13 @@ final class McpMailFlagsTest extends IntegrationTestCase {
 	}
 
 	/**
-	 * The confirmed call of a plan.
+	 * Execute an authorized write directly.
 	 *
-	 * @param array<string, mixed> $plan the MCP result of the plan
 	 * @param array<string, mixed> $arguments the arguments of the plan
-	 * @return array<string, mixed> the MCP result of the confirmed call
+	 * @return array<string, mixed> the MCP result of the direct call
 	 */
-	private function confirm(array $plan, array $arguments): array {
-		$result = $this->call([self::TOOL, $arguments + ['confirm' => true, PlanState::ARGUMENT => $plan['structuredContent'][PlanState::ARGUMENT]]]);
+	private function execute(array $arguments): array {
+		$result = $this->call([self::TOOL, $arguments]);
 		$this->assertArrayNotHasKey('isError', $result, json_encode($result, JSON_THROW_ON_ERROR));
 		return $result;
 	}
