@@ -81,6 +81,9 @@ final class WriteGate {
 			unset($properties[self::SHARED]['default']);
 			$properties[self::SHARED]['description'] = 'Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions.';
 		}
+		if ($direct && isset($properties[PlanState::ARGUMENT])) {
+			$properties[PlanState::ARGUMENT]['description'] = 'Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write.';
+		}
 		$schema['properties'] = $properties === [] ? new \stdClass() : $properties;
 		if (isset($schema['required'])) {
 			$required = array_values(array_diff((array)$schema['required'], [self::CONFIRM]));
