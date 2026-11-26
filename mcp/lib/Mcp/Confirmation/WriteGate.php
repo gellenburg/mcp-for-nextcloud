@@ -30,6 +30,11 @@ final class WriteGate {
 	public const CONFIRM = 'confirm';
 	/** The one operation that does not change anything. */
 	private const READ_OPERATION = 'read';
+	private const DIRECT_TOOLS = ['files_checkout', 'files_move_batch'];
+
+	public static function supportsDirectExecution(string $name): bool {
+		return in_array($name, self::DIRECT_TOOLS, true);
+	}
 
 	private function __construct() {
 	}
@@ -64,7 +69,9 @@ final class WriteGate {
 		$schema = $definition['inputSchema'];
 		$properties = (array)($schema['properties'] ?? []);
 		// The property is set, never merged: one wording for every module is what tells the model the rule once.
-		$properties[self::CONFIRM] = self::confirmProperty();
+		$properties[self::CONFIRM] = self::supportsDirectExecution($definition['name'])
+			? ['type' => 'boolean', 'description' => 'Optional dry run: false returns a preview; omission executes directly for personal resources. Shared-resource approval remains required.']
+			: self::confirmProperty();
 		$schema['properties'] = $properties === [] ? new \stdClass() : $properties;
 		if (isset($schema['required'])) {
 			$required = array_values(array_diff((array)$schema['required'], [self::CONFIRM]));
