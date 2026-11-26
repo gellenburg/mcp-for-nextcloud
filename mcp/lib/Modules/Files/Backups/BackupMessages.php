@@ -14,16 +14,14 @@ final class BackupMessages {
 	/** @return string description of files_edit */
 	public static function editTool(): string {
 		return 'Replace the content of an existing text file and return the diff. Before writing, requires '
-			. 'active versioning. MCP copies follow the administrator backup setting. If the file is outside your personal '
-			. 'folder, only write after asking the user and retrying the call with confirm_shared. '
+			. 'active versioning. MCP copies follow the administrator backup setting. Shared files use existing grants and native permissions; set confirm_shared: false to exclude shared effects. '
 			. 'Never creates, moves, or deletes files.';
 	}
 
 	/** @return string description of files_replace */
 	public static function replaceTool(): string {
 		return 'Replace a unique snippet of an existing text file and return the diff. The specified snippet '
-			. 'must appear exactly once. Before writing, requires active versioning and applies the administrator backup setting. If the file is outside your personal folder, only write after '
-			. 'asking the user and retrying the call with confirm_shared.';
+			. 'must appear exactly once. Before writing, requires active versioning and applies the administrator backup setting. Shared files use existing grants and native permissions; set confirm_shared: false to exclude shared effects.';
 	}
 
 	/** @return string description of files_checkout */
@@ -33,14 +31,12 @@ final class BackupMessages {
 			. 'Upload raw bytes with curl -T /tmp/file -X PUT -H "Content-Type: application/octet-stream" "$UPLOAD_URL". '
 			. 'A text file can also be edited directly with files_edit or files_replace. Links are valid for 5 to 15 minutes, single-use, '
 			. 'and bound to you, the file, and current ETag: if the file changes before upload, nothing is '
-			. 'written. Upload follows the same administrator backup setting as files_edit. If the file is outside your personal '
-			. 'folder, only issue links after asking the user and retrying with confirm_shared.';
+			. 'written. Upload follows the same administrator backup setting as files_edit. Shared files use existing grants and native permissions; set confirm_shared: false to exclude shared effects.';
 	}
 
 	/** @return string description of files_version_restore */
 	public static function versionRestoreTool(): string {
-		return 'Restore a previous file version. Pre-write copies use the configured MCP backup folder unless suspended by the administrator while native versioning is enabled. If the file is outside your personal folder, '
-			. 'restore only after asking the user and retrying with confirm_shared.';
+		return 'Restore a previous file version. Pre-write copies use the configured MCP backup folder unless suspended by the administrator while native versioning is enabled. Shared files use existing grants and native permissions; set confirm_shared: false to exclude shared effects.';
 	}
 
 	/**

@@ -31,8 +31,7 @@ final class TaggingMessages {
 			. 'must be allowed to change the file. Tags the administrator uses to hide files from MCP can never be '
 			. 'assigned or removed here. A hidden, missing or unchangeable file and an unknown or unusable tag get the '
 			. 'same not-found answer. Tags are seen by everyone who sees the file and may start automated rules. No '
-			. 'file content changes and nothing is deleted. Requires the files.tags permission, a plan, confirm: true '
-			. 'with its plan_state, and confirm_shared for a file of someone else.';
+			. 'file content changes and nothing is deleted. Requires the files.tags permission and native access; the server prepares and validates state before writing.';
 	}
 
 	/** @return string description of the tag_id parameter */

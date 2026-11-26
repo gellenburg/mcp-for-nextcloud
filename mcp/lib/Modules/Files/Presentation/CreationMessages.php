@@ -15,12 +15,11 @@ final class CreationMessages {
 	/** @return string description of files_upload, read by the model and therefore fixed English */
 	public static function uploadTool(): string {
 		return 'Create a NEW file of any type (docx, xlsx, pdf, image, zip) that you generated locally, without passing '
-			. 'its content through the model. Without confirm: true it returns the plan; with confirm: true it returns '
-			. 'uploadUrl, a single-use link valid for 15 minutes and bound to you and this path. Send the bytes with '
+			. 'its content through the model. Set confirm: false for a dry run; a direct call returns uploadUrl, a single-use link valid for 15 minutes and bound to you and this path. Send the bytes with '
 			. 'curl -sS -T /tmp/file -X PUT -H "Content-Type: application/octet-stream" "$UPLOAD_URL"; the answer '
 			. 'carries path, size, etag and fileId. Never overwrites a file with content: an existing name is refused, so use '
 			. 'files_checkout to replace an existing file. For a small text file use files_create. The folder must '
-			. 'exist (files_mkdir creates it); outside your personal folder ask the user and retry with confirm_shared.';
+			. 'exist (files_mkdir creates it); shared destinations use existing grants and native permissions (confirm_shared: false excludes shared effects).';
 	}
 
 	/** @return string description of files_create, read by the model and therefore fixed English */
@@ -29,7 +28,7 @@ final class CreationMessages {
 			static fn (string $extension): string => '.' . $extension, \OCA\Mcp\Modules\Files\Creation\FileCreation::TEXT_EXTENSIONS))
 			. ', up to 1 MB of UTF-8. Never overwrites a file with content: an existing name is refused (use files_edit or files_checkout '
 			. 'to change it). For any other type or a larger file use files_upload. The folder must exist '
-			. '(files_mkdir creates it); outside your personal folder ask the user and retry with confirm_shared.';
+			. '(files_mkdir creates it); shared destinations use existing grants and native permissions (confirm_shared: false excludes shared effects).';
 	}
 
 	/** @return string description of the path of files_upload and files_create */

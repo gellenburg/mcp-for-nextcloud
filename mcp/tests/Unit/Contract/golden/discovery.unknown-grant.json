@@ -156,7 +156,7 @@
                     {
                         "name": "files_mkdir",
                         "title": "Create folder",
-                        "description": "Create a folder, including intermediate levels when missing. Refuses if destination already exists and never deletes existing contents. If destination is outside your personal folder, ask the user first and retry with confirm_shared.",
+                        "description": "Create a folder, including intermediate levels when missing. Refuses if destination already exists and never deletes existing contents. Shared destinations use existing grants and native permissions; set confirm_shared: false to exclude shared effects.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -190,7 +190,7 @@
                     {
                         "name": "files_copy",
                         "title": "Copy file",
-                        "description": "Copy a file or folder to another path, creating a new node with a new id. Never overwrites the destination. The copy is an independent node: does not preserve source id, versions, or shares. Capped at 2000 items and 1073741824 bytes, measured before copying. If source or destination is outside your personal folder, ask the user first and retry with confirm_shared.",
+                        "description": "Copy a file or folder to another path, creating a new node with a new id. Never overwrites the destination. The copy is an independent node: does not preserve source id, versions, or shares. Capped at 2000 items and 1073741824 bytes, measured before copying. Shared sources and destinations use existing grants and native permissions; set confirm_shared: false to exclude shared effects.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -234,7 +234,7 @@
                     {
                         "name": "files_move",
                         "title": "Move file",
-                        "description": "Move or rename a file or folder within the same file area, without overwriting the destination. Reports id before and after, as well as version and share counts when corresponding apps are enabled. Does not move across different storages: there Nextcloud treats it as a copy and the id changes. If source or destination is outside your personal folder, ask the user first and retry with confirm_shared.",
+                        "description": "Move or rename a file or folder within the same file area, without overwriting the destination. Reports id before and after, as well as version and share counts when corresponding apps are enabled. Does not move across different storages: there Nextcloud treats it as a copy and the id changes. Shared sources and destinations use existing grants and native permissions; set confirm_shared: false to exclude shared effects.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -278,7 +278,7 @@
                     {
                         "name": "files_move_batch",
                         "title": "Move files in bulk",
-                        "description": "Move several files and create folders, in the given order. Without confirm: true writes nothing and returns the full plan: what would succeed, what conflicts, what Nextcloud denies, what belongs to someone else, and which folders would be created. With confirm: true it executes in order, creates the folders beforehand and returns a batch_id to undo with files_undo_batch. An item failing midway halts the batch: items already moved remain recorded and can be undone, and unattempted items are returned as not_attempted.",
+                        "description": "Move several files and create folders, in the given order. Set confirm: false for a dry run that writes nothing and returns the full plan: what would succeed, what conflicts, what Nextcloud denies, what belongs to someone else, and which folders would be created. A direct call executes in order, creates the folders beforehand and returns a batch_id to undo with files_undo_batch. An item failing midway halts the batch: items already moved remain recorded and can be undone, and unattempted items are returned as not_attempted.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -406,7 +406,7 @@
                     {
                         "name": "files_edit",
                         "title": "Edit file",
-                        "description": "Replace the content of an existing text file and return the diff. Before writing, requires active versioning. MCP copies follow the administrator backup setting. If the file is outside your personal folder, only write after asking the user and retrying the call with confirm_shared. Never creates, moves, or deletes files.",
+                        "description": "Replace the content of an existing text file and return the diff. Before writing, requires active versioning. MCP copies follow the administrator backup setting. Shared files use existing grants and native permissions; set confirm_shared: false to exclude shared effects. Never creates, moves, or deletes files.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -449,7 +449,7 @@
                     {
                         "name": "files_replace",
                         "title": "Replace part of a file",
-                        "description": "Replace a unique snippet of an existing text file and return the diff. The specified snippet must appear exactly once. Before writing, requires active versioning and applies the administrator backup setting. If the file is outside your personal folder, only write after asking the user and retrying the call with confirm_shared.",
+                        "description": "Replace a unique snippet of an existing text file and return the diff. The specified snippet must appear exactly once. Before writing, requires active versioning and applies the administrator backup setting. Shared files use existing grants and native permissions; set confirm_shared: false to exclude shared effects.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -499,7 +499,7 @@
                     {
                         "name": "files_checkout",
                         "title": "Download file for local editing",
-                        "description": "Provide temporary download and upload links to edit any file type (document, spreadsheet, PDF, image) with local tools (curl) without passing content through the model, up to the upload limit. Upload raw bytes with curl -T /tmp/file -X PUT -H \"Content-Type: application/octet-stream\" \"$UPLOAD_URL\". A text file can also be edited directly with files_edit or files_replace. Links are valid for 5 to 15 minutes, single-use, and bound to you, the file, and current ETag: if the file changes before upload, nothing is written. Upload follows the same administrator backup setting as files_edit. If the file is outside your personal folder, only issue links after asking the user and retrying with confirm_shared.",
+                        "description": "Provide temporary download and upload links to edit any file type (document, spreadsheet, PDF, image) with local tools (curl) without passing content through the model, up to the upload limit. Upload raw bytes with curl -T /tmp/file -X PUT -H \"Content-Type: application/octet-stream\" \"$UPLOAD_URL\". A text file can also be edited directly with files_edit or files_replace. Links are valid for 5 to 15 minutes, single-use, and bound to you, the file, and current ETag: if the file changes before upload, nothing is written. Upload follows the same administrator backup setting as files_edit. Shared files use existing grants and native permissions; set confirm_shared: false to exclude shared effects.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -601,7 +601,7 @@
                     {
                         "name": "files_version_restore",
                         "title": "Restore file version",
-                        "description": "Restore a previous file version. Pre-write copies use the configured MCP backup folder unless suspended by the administrator while native versioning is enabled. If the file is outside your personal folder, restore only after asking the user and retrying with confirm_shared.",
+                        "description": "Restore a previous file version. Pre-write copies use the configured MCP backup folder unless suspended by the administrator while native versioning is enabled. Shared files use existing grants and native permissions; set confirm_shared: false to exclude shared effects.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -798,7 +798,7 @@
                     {
                         "name": "files_upload",
                         "title": "Upload new file",
-                        "description": "Create a NEW file of any type (docx, xlsx, pdf, image, zip) that you generated locally, without passing its content through the model. Without confirm: true it returns the plan; with confirm: true it returns uploadUrl, a single-use link valid for 15 minutes and bound to you and this path. Send the bytes with curl -sS -T /tmp/file -X PUT -H \"Content-Type: application/octet-stream\" \"$UPLOAD_URL\"; the answer carries path, size, etag and fileId. Never overwrites a file with content: an existing name is refused, so use files_checkout to replace an existing file. For a small text file use files_create. The folder must exist (files_mkdir creates it); outside your personal folder ask the user and retry with confirm_shared.",
+                        "description": "Create a NEW file of any type (docx, xlsx, pdf, image, zip) that you generated locally, without passing its content through the model. Set confirm: false for a dry run; a direct call returns uploadUrl, a single-use link valid for 15 minutes and bound to you and this path. Send the bytes with curl -sS -T /tmp/file -X PUT -H \"Content-Type: application/octet-stream\" \"$UPLOAD_URL\"; the answer carries path, size, etag and fileId. Never overwrites a file with content: an existing name is refused, so use files_checkout to replace an existing file. For a small text file use files_create. The folder must exist (files_mkdir creates it); shared destinations use existing grants and native permissions (confirm_shared: false excludes shared effects).",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -837,7 +837,7 @@
                     {
                         "name": "files_create",
                         "title": "Create text file",
-                        "description": "Create a NEW small text file with its content inline: .md, .txt, .csv, .json, .html, .xml, .yaml, .yml, up to 1 MB of UTF-8. Never overwrites a file with content: an existing name is refused (use files_edit or files_checkout to change it). For any other type or a larger file use files_upload. The folder must exist (files_mkdir creates it); outside your personal folder ask the user and retry with confirm_shared.",
+                        "description": "Create a NEW small text file with its content inline: .md, .txt, .csv, .json, .html, .xml, .yaml, .yml, up to 1 MB of UTF-8. Never overwrites a file with content: an existing name is refused (use files_edit or files_checkout to change it). For any other type or a larger file use files_upload. The folder must exist (files_mkdir creates it); shared destinations use existing grants and native permissions (confirm_shared: false excludes shared effects).",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -876,7 +876,7 @@
                     {
                         "name": "files_delete",
                         "title": "Delete file or folder",
-                        "description": "Try the trash bin first: delete one own file or completely admitted folder after preventive checks, with a separate opt-in files.delete permission. Nextcloud tries to move the item to the trash bin and may permanently delete it if that fails. Only unencrypted Local home originals or descendants of local received shares are supported; DELETE, not UPDATE, is required. Shared content requires confirm_shared, including shared descendants in a folder. Received share roots are always refused. Folders are refused with configured exclusion tags or incomplete inspection (2,000 nodes, 1 GiB, 64 levels). Preview returns the exact source, inspected folder counts, ID, ETag and a permanent-deletion risk warning; echo id and etag when confirming. Recovery is not guaranteed, and no mandatory recovery copy is made. After a removal the receipt says whether the item was confirmed in your own trash bin at the time of the check; items inside shares you received go to the trash bin of the owner, which is never checked, so their destination is reported as not confirmed. Personal, mounted and selected scope roots, other backends and reserved backup names (including canonical owner origins behind aliases) are refused. Plans disclose shared impact without recipient names; native restoration destinations can differ by actor/owner.",
+                        "description": "Try the trash bin first: delete one own file or completely admitted folder after preventive checks, with a separate opt-in files.delete permission. Nextcloud tries to move the item to the trash bin and may permanently delete it if that fails. Only unencrypted Local home originals or descendants of local received shares are supported; DELETE, not UPDATE, is required. Set confirm_shared: false to exclude shared effects, including shared descendants in a folder. Received share roots are always refused. Folders are refused with configured exclusion tags or incomplete inspection (2,000 nodes, 1 GiB, 64 levels). Preview returns the exact source, inspected folder counts, ID, ETag and a permanent-deletion risk warning; optional id and etag bind execution to the inspected target. Recovery is not guaranteed, and no mandatory recovery copy is made. After a removal the receipt says whether the item was confirmed in your own trash bin at the time of the check; items inside shares you received go to the trash bin of the owner, which is never checked, so their destination is reported as not confirmed. Personal, mounted and selected scope roots, other backends and reserved backup names (including canonical owner origins behind aliases) are refused. Plans disclose shared impact without recipient names; native restoration destinations can differ by actor/owner.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -981,7 +981,7 @@
                     {
                         "name": "files_set_tag",
                         "title": "Add or remove a file tag",
-                        "description": "Assign one existing collaborative (system) tag to one file or folder, or remove it, through the native Nextcloud tag relation. Name the tag by tag_id (from files_list_tags) or by its exact name, never both. Nextcloud decides as in the web interface: the tag must be one the user may see and assign, and the user must be allowed to change the file. Tags the administrator uses to hide files from MCP can never be assigned or removed here. A hidden, missing or unchangeable file and an unknown or unusable tag get the same not-found answer. Tags are seen by everyone who sees the file and may start automated rules. No file content changes and nothing is deleted. Requires the files.tags permission, a plan, confirm: true with its plan_state, and confirm_shared for a file of someone else.",
+                        "description": "Assign one existing collaborative (system) tag to one file or folder, or remove it, through the native Nextcloud tag relation. Name the tag by tag_id (from files_list_tags) or by its exact name, never both. Nextcloud decides as in the web interface: the tag must be one the user may see and assign, and the user must be allowed to change the file. Tags the administrator uses to hide files from MCP can never be assigned or removed here. A hidden, missing or unchangeable file and an unknown or unusable tag get the same not-found answer. Tags are seen by everyone who sees the file and may start automated rules. No file content changes and nothing is deleted. Requires the files.tags permission and native access; the server prepares and validates state before writing.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -1013,7 +1013,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -1037,7 +1037,7 @@
                     {
                         "name": "files_add_comment",
                         "title": "Add file comment",
-                        "description": "Add a comment to a file or folder, as you, through Nextcloud's own comments service. Without confirm: true it only shows the plan. Mentions of existing accounts notify them; any other mention is refused. Adding a comment marks the file's comments as read for you. Comments are never edited or deleted.",
+                        "description": "Add a comment to a file or folder, as you, through Nextcloud's own comments service. Set confirm: false for a read-only preview. Mentions of existing accounts notify them; any other mention is refused. Adding a comment marks the file's comments as read for you. Comments are never edited or deleted.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -1060,7 +1060,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -1207,7 +1207,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
@@ -2058,7 +2058,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "name": {
                                     "type": "string",
@@ -2832,7 +2832,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -2883,7 +2883,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -2936,7 +2936,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -3101,7 +3101,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
@@ -3584,7 +3584,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -3628,7 +3628,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -3678,7 +3678,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -3728,7 +3728,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -3776,7 +3776,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
@@ -3832,7 +3832,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -3871,7 +3871,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -4764,7 +4764,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -4805,7 +4805,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -4887,7 +4887,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -4963,7 +4963,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5239,7 +5239,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5303,7 +5303,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5352,7 +5352,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5414,7 +5414,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5507,7 +5507,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5577,7 +5577,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5627,7 +5627,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5731,7 +5731,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5829,7 +5829,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -5882,7 +5882,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -6160,7 +6160,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -6400,7 +6400,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -6456,7 +6456,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "option_id": {
                                     "type": "integer",
@@ -6542,7 +6542,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -6592,7 +6592,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -6656,7 +6656,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -6719,7 +6719,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -6763,7 +6763,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -6812,7 +6812,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7008,7 +7008,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7254,7 +7254,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7375,7 +7375,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7420,7 +7420,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7479,7 +7479,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7542,7 +7542,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7589,7 +7589,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7629,7 +7629,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7669,7 +7669,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7749,7 +7749,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7806,7 +7806,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -7847,7 +7847,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -8057,7 +8057,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -8128,7 +8128,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -8187,7 +8187,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -8231,7 +8231,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -8320,7 +8320,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -8373,7 +8373,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -8417,7 +8417,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",
@@ -8603,7 +8603,7 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "maxLength": 128,
-                                    "description": "Opaque value of the plan. Send it back unchanged together with confirm: true. If the state changed since the plan, nothing is written and the answer is the new plan."
+                                    "description": "Optional opaque precondition from an explicit preview. Omit for server-side preparation, or pass unchanged to bind execution to that state. A mismatch prevents the write."
                                 },
                                 "confirm": {
                                     "type": "boolean",

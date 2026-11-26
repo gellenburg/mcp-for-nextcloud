@@ -13,9 +13,8 @@ use OCA\Mcp\L10n\Translator;
 final class ReorganizationMessages {
 	/** @return string description of files_move_batch */
 	public static function batchTool(): string {
-		return 'Move several files and create folders, in the given order. Without confirm: true writes nothing '
-			. 'and returns the full plan: what would succeed, what conflicts, what Nextcloud denies, what belongs '
-			. 'to someone else, and which folders would be created. With confirm: true it executes in order, '
+		return 'Move several files and create folders, in the given order. Set confirm: false for a dry run that writes nothing and returns the full plan: what would succeed, what conflicts, what Nextcloud denies, what belongs '
+			. 'to someone else, and which folders would be created. A direct call executes in order, '
 			. 'creates the folders beforehand and returns a batch_id to undo with files_undo_batch. An item '
 			. 'failing midway halts the batch: items already moved remain recorded and can be undone, and '
 			. 'unattempted items are returned as not_attempted.';
@@ -63,8 +62,7 @@ final class ReorganizationMessages {
 	/** @return string description of files_mkdir */
 	public static function mkdirTool(): string {
 		return 'Create a folder, including intermediate levels when missing. Refuses if destination '
-			. 'already exists and never deletes existing contents. If destination is outside your personal '
-			. 'folder, ask the user first and retry with confirm_shared.';
+			. 'already exists and never deletes existing contents. Shared destinations use existing grants and native permissions; set confirm_shared: false to exclude shared effects.';
 	}
 
 	/** @return string description of files_copy */
@@ -72,8 +70,7 @@ final class ReorganizationMessages {
 		return 'Copy a file or folder to another path, creating a new node with a new id. Never '
 			. 'overwrites the destination. The copy is an independent node: does not preserve source id, versions, '
 			. 'or shares. Capped at ' . \OCA\Mcp\Modules\Files\Reorganization\ReorganizationLimits::NODES . ' items and '
-			. \OCA\Mcp\Modules\Files\Reorganization\ReorganizationLimits::BYTES . ' bytes, measured before copying. If source or destination '
-			. 'is outside your personal folder, ask the user first and retry with confirm_shared.';
+			. \OCA\Mcp\Modules\Files\Reorganization\ReorganizationLimits::BYTES . ' bytes, measured before copying. Shared sources and destinations use existing grants and native permissions; set confirm_shared: false to exclude shared effects.';
 	}
 
 	/** @return string description of files_move */
@@ -81,8 +78,7 @@ final class ReorganizationMessages {
 		return 'Move or rename a file or folder within the same file area, without overwriting the '
 			. 'destination. Reports id before and after, as well as version and share counts when '
 			. 'corresponding apps are enabled. Does not move across different storages: there Nextcloud treats '
-			. 'it as a copy and the id changes. If source or destination is outside your personal folder, ask '
-			. 'the user first and retry with confirm_shared.';
+			. 'it as a copy and the id changes. Shared sources and destinations use existing grants and native permissions; set confirm_shared: false to exclude shared effects.';
 	}
 
 	/**

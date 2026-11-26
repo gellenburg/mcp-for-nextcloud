@@ -17,8 +17,7 @@ final class CommentingMessages {
 
 	/** @return string description of files_add_comment */
 	public static function addCommentTool(): string {
-		return 'Add a comment to a file or folder, as you, through Nextcloud\'s own comments service. Without confirm: true '
-			. 'it only shows the plan. Mentions of existing accounts notify them; any other mention is refused. Adding a '
+		return 'Add a comment to a file or folder, as you, through Nextcloud\'s own comments service. Set confirm: false for a read-only preview. Mentions of existing accounts notify them; any other mention is refused. Adding a '
 			. 'comment marks the file\'s comments as read for you. Comments are never edited or deleted.';
 	}
 
