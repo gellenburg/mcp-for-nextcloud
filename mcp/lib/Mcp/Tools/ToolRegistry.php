@@ -190,8 +190,12 @@ class ToolRegistry {
 							return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
 						}
 						$arguments[WriteGate::CONFIRM] = true;
-						if (isset($published['inputSchema']['properties']['etag']) && !isset($arguments['etag']) && is_string($plan['etag'] ?? null)) {
-							$arguments['etag'] = $plan['etag'];
+						// Preserve the exact planned identity and revision when the tool supports them.
+						$properties = (array)($published['inputSchema']['properties'] ?? []);
+						foreach (['etag', 'id', 'plan_state'] as $field) {
+							if (isset($properties[$field], $plan[$field]) && !array_key_exists($field, $arguments)) {
+								$arguments[$field] = $plan[$field];
+							}
 						}
 						$arguments = ArgumentValidator::validate($published['inputSchema'], $arguments);
 					}
