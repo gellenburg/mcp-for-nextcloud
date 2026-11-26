@@ -7,6 +7,13 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 All notable changes to the native Nextcloud app (`mcp/`). Versions follow `mcp/appinfo/info.xml`.
 
+## 1.4.1 — fork development build
+
+- Direct catalog write execution with internal previews, signed state receipts and existing grants, ACLs, scopes, locks and backups.
+- `files_read` supports `mode=download` (read-only original-byte single-use link) and `mode=metadata` (bounded embedded PNG/JPEG textual, EXIF, XMP and IPTC extraction).
+- AppDrop ZIP packaging based on the upstream validated production package. The app ID stays `mcp`; no database migration is introduced by this fork.
+- The development build is not approved for deployment until regression and integration testing are complete.
+
 ## 1.4.0 — 2026-11-13
 
 Minor release on top of 1.3.5. It adds routine reads and writes around the calendar, Talk, notifications, absence, user status, file tags and comments, mail attachments and Deck labels, plus two write routines that combine apps after one confirmation and a read-only meeting preparation. Every new permission is denied by default: an upgrade grants no new access, saved policies, groups and levels keep their effective grants, and a permission missing from a saved policy counts as denied. No database migration; updating from 1.3.5 needs no extra step.

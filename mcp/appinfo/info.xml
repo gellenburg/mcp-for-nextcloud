@@ -7,6 +7,12 @@
     <summary lang="es">Servidor MCP para su Nextcloud: conecte Claude, ChatGPT y otros clientes de IA, con permisos por usuario y por grupo</summary>
     <summary lang="de">MCP-Server für Nextcloud: KI-Clients mit Berechtigungen pro Benutzer und Gruppe verbinden</summary>
     <description><![CDATA[
+## Fork 1.4.1 (development)
+
+- Catalog writes execute directly under existing grants and native resource permissions. Explicit dry runs remain available.
+- Read-only original file downloads and embedded PNG/JPEG metadata extraction.
+- This is a separately maintained fork; upstream version 1.4.0 notes follow.
+
 ## What's new in 1.4.0
 
 - **Routines:** after one confirmation, `routines_create_meeting` creates a private Talk room, posts the agenda and creates the calendar event with the room link; `routines_create_mail_card` saves one email attachment as a new file and creates a Deck card that references it. `routines_prepare_meeting` is read-only and needs no confirmation: it builds a dossier for one event you can see. A write routine stops at the first failed or uncertain step and keeps what was created: no rollback, no retry and no promise that invitations are delivered. The mail card routine never shares the saved file with the board, because that disclosure needs its own decision.
@@ -378,7 +384,7 @@ Claude (claude.ai und Claude Desktop), ChatGPT und Gemini CLI melden sich mit OA
 
 Nextcloud 32–35, PHP 8.2+; 1.4.0 wird auf Nextcloud 34 und 35 unterstützt und getestet, nichts Neues zielt auf 32 oder 33. Mail 5.0.0+ (Anhangtext 5.10.11+), Tables 1.0.0+, Forms 5.3.0+ und Polls 8.6.3+; Notes, Mail, Tables, Forms, Polls, Deck und Talk sind optional: ihre Werkzeuge erscheinen nur, wenn die App in einer unterstützten Version aktiviert ist. Der Administrator verwaltet Berechtigungen, Ausschluss-Tags und Ressourcenbereiche. Bestehende Dateikopien und Versions-Voraussetzungen bleiben gültig; Kontaktlöschung braucht eine geprüfte Sicherung.
     ]]></description>
-    <version>1.4.0</version>
+    <version>1.4.1</version>
     <licence>AGPL-3.0-or-later</licence>
     <author mail="jhonatan@sintax.tech">Jhonatan Jaworski</author>
     <namespace>Mcp</namespace>
