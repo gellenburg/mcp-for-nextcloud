@@ -363,6 +363,11 @@ final class VisibilityContractTest extends TestCase {
 
 		// 1. files_read
 		foreach (['/secret_direct.txt', '/SecretFolder/secret_ancestral.txt'] as $p) {
+			foreach (['metadata', 'download'] as $mode) {
+				$blocked = $registry->call('files_read', ['path' => $p, 'mode' => $mode], 'alice');
+				$this->assertTrue($blocked['isError'] ?? false);
+				$this->assertSame(CommonMessages::notFound(), $blocked['content'][0]['text']);
+			}
 			$res = $registry->call('files_read', ['path' => $p], 'alice');
 			$this->assertTrue($res['isError'] ?? false);
 			$this->assertStringContainsString(CommonMessages::notFound(), $res['content'][0]['text']);
@@ -669,7 +674,7 @@ final class VisibilityContractTest extends TestCase {
 		}
 		$visibleId = $this->tree->nodes['/alice/files/shared_visible.txt']['id'];
 		$this->sharesById['ocinternal:visible'] = $this->ownShareOf('/shared_visible.txt', $visibleId, 'visible');
-		$res = $registry->call('files_unshare', ['shareId' => 'ocinternal:visible'], 'alice');
+		$res = $registry->call('files_unshare', ['shareId' => 'ocinternal:visible', 'confirm' => false], 'alice');
 		$this->assertArrayNotHasKey('isError', $res);
 		$this->assertSame('/shared_visible.txt', $res['structuredContent']['path']);
 
