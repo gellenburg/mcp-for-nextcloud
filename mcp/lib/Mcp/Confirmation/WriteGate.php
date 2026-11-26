@@ -12,31 +12,35 @@ use OCA\Mcp\Mcp\Tools\PreviewsWrites;
 use OCA\Mcp\Mcp\Tools\ToolModule;
 use OCA\Mcp\Mcp\Tools\ToolPresentation;
 
-/**
- * The one place where "this tool changes something" is decided.
- *
- * A definition whose operation is not `read` is a write, whatever the module says: the registry adds
- * the `confirm` property to the published schema and refuses to run the call without it. The refusal is
- * a normal result carrying the plan, not an error, because the model is expected to read it, show it
- * to the user and ask.
- *
- * `confirm` is deliberately never required and never `const: true`: a call without it is the preview,
- * which is the state every write starts from. A module may implement {@see PreviewsWrites} to answer
- * with a plan of its own; without it the caller gets the generic plan, which still says what the tool
- * is and which arguments it was called with.
- */
+/** Write classification, optional previews and server-side preparation. */
 final class WriteGate {
 	/** Argument every writing tool accepts, and the only thing that lets it run. */
 	public const CONFIRM = 'confirm';
 	/** The one operation that does not change anything. */
 	private const READ_OPERATION = 'read';
-	private const DIRECT_TOOLS = [
-		'files_checkout', 'files_move_batch', 'files_create', 'files_edit', 'files_replace',
-		'files_mkdir', 'files_move', 'files_copy', 'files_upload', 'files_delete', 'files_version_restore', 'files_undo_batch',
-	];
+	public const SHARED = 'confirm_shared';
 
-	public static function supportsDirectExecution(string $name): bool {
-		return in_array($name, self::DIRECT_TOOLS, true);
+	public static function directConfirmProperty(): array {
+		return ['type' => 'boolean', 'description' => 'Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions.'];
+	}
+
+	public static function isDirectSchema(array $definition): bool {
+		return (((array)($definition['inputSchema']['properties'] ?? []))[self::CONFIRM] ?? null) === self::directConfirmProperty();
+	}
+
+	/** Preserve caller preconditions and add only declared, server-generated state receipts. */
+	public static function directArguments(array $definition, array $arguments, array $plan): array {
+		$properties = (array)($definition['inputSchema']['properties'] ?? []);
+		$arguments[self::CONFIRM] = true;
+		foreach (['etag', 'id', PlanState::ARGUMENT, 'file_state'] as $field) {
+			if (isset($properties[$field], $plan[$field]) && !array_key_exists($field, $arguments)) {
+				$arguments[$field] = $plan[$field];
+			}
+		}
+		if (isset($properties[self::SHARED]) && !array_key_exists(self::SHARED, $arguments)) {
+			$arguments[self::SHARED] = true;
+		}
+		return $arguments;
 	}
 
 	private function __construct() {
@@ -65,16 +69,18 @@ final class WriteGate {
 	 * @param array{name:string, description:string, inputSchema:array<string, mixed>, module:string, operation:string} $definition
 	 * @return array{name:string, description:string, inputSchema:array<string, mixed>, module:string, operation:string} the definition as the client sees it
 	 */
-	public static function publish(array $definition): array {
+	public static function publish(array $definition, bool $direct = false): array {
 		if (!self::isWrite($definition)) {
 			return $definition;
 		}
 		$schema = $definition['inputSchema'];
 		$properties = (array)($schema['properties'] ?? []);
 		// The property is set, never merged: one wording for every module is what tells the model the rule once.
-		$properties[self::CONFIRM] = self::supportsDirectExecution($definition['name'])
-			? ['type' => 'boolean', 'description' => 'Optional dry run: false returns a preview; omission executes directly for personal resources. Shared-resource approval remains required.']
-			: self::confirmProperty();
+		$properties[self::CONFIRM] = $direct ? self::directConfirmProperty() : self::confirmProperty();
+		if ($direct && isset($properties[self::SHARED])) {
+			unset($properties[self::SHARED]['default']);
+			$properties[self::SHARED]['description'] = 'Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions.';
+		}
 		$schema['properties'] = $properties === [] ? new \stdClass() : $properties;
 		if (isset($schema['required'])) {
 			$required = array_values(array_diff((array)$schema['required'], [self::CONFIRM]));

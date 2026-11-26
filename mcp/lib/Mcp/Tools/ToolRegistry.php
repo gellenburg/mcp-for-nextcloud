@@ -114,7 +114,7 @@ class ToolRegistry {
 					continue;
 				}
 				if ($allowed) {
-					$tools[] = $this->present($definition);
+					$tools[] = $this->present($definition, $module instanceof PreviewsWrites);
 				}
 			}
 		}
@@ -168,42 +168,41 @@ class ToolRegistry {
 					$audit(RestrictedModule::DENIED);
 					break 2;
 				}
-				$published = WriteGate::publish($definition);
+				$direct = $module instanceof PreviewsWrites;
+				$published = WriteGate::publish($definition, $direct);
 				try {
 					$arguments = ArgumentValidator::validate($published['inputSchema'], $arguments);
 				} catch (InvalidArgumentException $e) {
 					$audit(RestrictedModule::INVALID);
 					throw $e;
 				}
+				$directRequest = $direct && WriteGate::isWrite($definition) && !array_key_exists(WriteGate::CONFIRM, $arguments);
 				try {
 					if (WriteGate::isWrite($definition) && !WriteGate::confirmed($arguments)) {
-						$plan = WriteGate::plan($module, $definition, $arguments, $userId);
-						// Direct execution for the first audited file operations. An explicit
-						// confirm=false still requests a dry run. Shared-resource approval
-						// and all native permission checks remain in force.
-						$direct = !array_key_exists(WriteGate::CONFIRM, $arguments)
-							&& WriteGate::supportsDirectExecution($name)
-							&& $module instanceof PreviewsWrites
-							&& ($plan['requiresSharedConfirmation'] ?? false) !== true
-							&& empty($plan['shared']);
-						if (!$direct) {
+						$previewArguments = $arguments;
+						if ($directRequest) {
+							unset($previewArguments['file_state'], $previewArguments['plan_state']);
+						}
+						$plan = WriteGate::plan($module, $definition, $previewArguments, $userId);
+						if (!$directRequest) {
 							return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
 						}
-						$arguments[WriteGate::CONFIRM] = true;
-						// Preserve the exact planned identity and revision when the tool supports them.
-						$properties = (array)($published['inputSchema']['properties'] ?? []);
-						foreach (['etag', 'id', 'plan_state'] as $field) {
-							if (isset($properties[$field], $plan[$field]) && !array_key_exists($field, $arguments)) {
-								$arguments[$field] = $plan[$field];
-							}
+						$arguments = ArgumentValidator::validate($published['inputSchema'],
+							WriteGate::directArguments($published, $arguments, $plan));
+						if (!self::permits($module, $userId) || !$this->access->allowed($definition, $userId)) {
+							$audit(RestrictedModule::DENIED);
+							return ToolResult::error(Translator::t('No access to this resource in Nextcloud.'));
 						}
-						$arguments = ArgumentValidator::validate($published['inputSchema'], $arguments);
 					}
 					$result = $module->call($name, $arguments, $userId);
 				} catch (InvalidArgumentException $e) {
 					$audit(RestrictedModule::INVALID);
 					throw $e;
 				} catch (PlanChanged $e) {
+					if ($directRequest) {
+						return ToolResult::structured('The resource changed during preparation. Nothing was written; read the latest state before retrying.',
+							['conflict' => true, 'requiresConfirmation' => false, 'plan' => $e->plan]) + ['isError' => true];
+					}
 					// Nothing was written: the person approved another state, so the answer is the new plan to approve.
 					$plan = WriteGate::envelope($definition, $e->plan);
 					return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
@@ -269,8 +268,8 @@ class ToolRegistry {
 	 * @param array<string, mixed> $definition a tool definition of a module, or of the guide itself
 	 * @return array{name:string, title:string, description:string, inputSchema:array<string, mixed>, annotations:array<string, bool|string>, module:string, operation:string, app?:string, apps?:list<string>, grantAnyOf?:list<string>}
 	 */
-	private function present(array $definition): array {
-		$definition = WriteGate::publish($definition);
+	private function present(array $definition, bool $direct = false): array {
+		$definition = WriteGate::publish($definition, $direct);
 		return [
 			'name' => $definition['name'],
 			'title' => ToolPresentation::title($definition['name']),

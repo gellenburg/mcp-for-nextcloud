@@ -264,7 +264,10 @@ final class ToolGuide {
 	 */
 	private function gates(array $definition): array {
 		$gates = [];
-		if ($definition['operation'] !== 'read' && !\OCA\Mcp\Mcp\Confirmation\WriteGate::supportsDirectExecution($definition['name'])) {
+		if (\OCA\Mcp\Mcp\Confirmation\WriteGate::isDirectSchema($definition)) {
+			return [];
+		}
+		if ($definition['operation'] !== 'read') {
 			$gates[] = ['name' => 'confirm', 'summary' => 'boolean, must be true'];
 		}
 		$properties = $definition['inputSchema']['properties'] ?? [];
@@ -408,7 +411,7 @@ final class ToolGuide {
 		// for the user. Saying so in the answer itself keeps a client that relays the text from dropping the
 		// only hint the reader has that the text was not written for their eyes.
 		return ToolResult::structured(self::LANGUAGE_NOTE . "\n\n"
-			. 'Write confirmation plans arrive as readable text in the user’s language, with the complete plan in structuredContent. Show that text to the user exactly as received.'
+			. 'Catalog writes execute directly unless confirm=false requests a dry run. Existing client approval policies still apply. Dry-run plans and conflicts include structuredContent.'
 			. "\n\n" . $markdown, ['language_note' => self::LANGUAGE_NOTE] + $data);
 	}
 }

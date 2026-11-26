@@ -96,17 +96,17 @@ final class ToolRegistryTest extends TestCase {
 		return new ToolRegistry([$module], $this->policy, $apps, $users, $this->logger, $guests);
 	}
 
-	/** Direct checkout uses the planned revision, while explicit dry runs and shared plans do not execute. */
+	/** Direct checkout prepares revisions and signed state, including authorized shared resources. */
 	public function testDirectCheckoutUsesInternalPreview(): void {
 		$module = new class implements ToolModule, \OCA\Mcp\Mcp\Tools\PreviewsWrites {
 			public array $calls = [];
 			public bool $shared = false;
 			public function definitions(): array {
 				return [['name' => 'files_checkout', 'description' => 'Checkout', 'module' => 'files', 'operation' => 'edit',
-					'inputSchema' => ['type' => 'object', 'properties' => ['path' => ['type' => 'string'], 'etag' => ['type' => 'string']], 'required' => ['path']]]];
+					'inputSchema' => ['type' => 'object', 'properties' => ['path' => ['type' => 'string'], 'etag' => ['type' => 'string'], 'confirm_shared' => ['type' => 'boolean', 'default' => false], 'plan_state' => ['type' => 'string']], 'required' => ['path']]]];
 			}
 			public function preview(string $name, array $arguments, string $userId): array {
-				return ['etag' => 'revision-1', 'requiresSharedConfirmation' => $this->shared, 'shared' => $this->shared ? [['path' => '/test.png']] : []];
+				return ['etag' => 'revision-1', 'plan_state' => 'signed-state', 'requiresSharedConfirmation' => $this->shared, 'shared' => $this->shared ? [['path' => '/test.png']] : []];
 			}
 			public function call(string $name, array $arguments, string $userId): array {
 				$this->calls[] = $arguments;
@@ -117,13 +117,14 @@ final class ToolRegistryTest extends TestCase {
 		$registry = new ToolRegistry([$module], $this->policy, $this->createMock(IAppManager::class), $this->createMock(IUserManager::class), $this->logger);
 		$result = $registry->call('files_checkout', ['path' => '/test.png'], 'alice');
 		self::assertArrayNotHasKey('isError', $result);
-		self::assertSame([['path' => '/test.png', 'etag' => 'revision-1', 'confirm' => true]], $module->calls);
+		self::assertSame([['path' => '/test.png', 'etag' => 'revision-1', 'confirm_shared' => true, 'plan_state' => 'signed-state', 'confirm' => true]], $module->calls);
 		$result = $registry->call('files_checkout', ['path' => '/test.png', 'confirm' => false], 'alice');
 		self::assertTrue($result['structuredContent']['requiresConfirmation']);
 		$module->shared = true;
 		$result = $registry->call('files_checkout', ['path' => '/test.png'], 'alice');
-		self::assertTrue($result['structuredContent']['requiresConfirmation']);
-		self::assertCount(1, $module->calls);
+		self::assertArrayNotHasKey('isError', $result);
+		self::assertCount(2, $module->calls);
+		self::assertTrue($module->calls[1]['confirm_shared']);
 	}
 
 	/** Every registered write gets the same readable envelope, regardless of module preview support. */
@@ -228,7 +229,7 @@ final class ToolRegistryTest extends TestCase {
 			public function renderPlan(string $tool, array $plan): ?string { return 'Custom body'; }
 		};
 		$this->policy->setGrant('alice', 'files', 'edit', true);
-		$result = (new ToolRegistry([$module], $this->policy, $this->createMock(IAppManager::class), $this->createMock(IUserManager::class), $this->logger))->call('fake_edit', [], 'alice');
+		$result = (new ToolRegistry([$module], $this->policy, $this->createMock(IAppManager::class), $this->createMock(IUserManager::class), $this->logger))->call('fake_edit', ['confirm' => false], 'alice');
 		self::assertSame(['requiresConfirmation' => true, 'tool' => 'fake_edit', 'title' => 'Edit'] + $plan, $result['structuredContent']);
 		self::assertStringContainsString('Custom body', $result['content'][0]['text']);
 		self::assertStringContainsString('*Review this.*', $result['content'][0]['text']);
