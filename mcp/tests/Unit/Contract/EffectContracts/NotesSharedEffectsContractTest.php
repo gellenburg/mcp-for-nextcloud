@@ -25,7 +25,7 @@ final class NotesSharedEffectsContractTest extends TestCase {
 			$gate->serve(fn (): array => [NotesWritesWiring::module($this, $tree, $gate, fn (): array => [])]);
 			$t = new EffectTranscript($this, $tool . '.shared');
 			$args += ['id' => $id, 'etag' => $tree->nodes['/alice/files/Team/old.md']['etag']];
-			$plan = $gate->call($tool, $args);
+			$plan = $gate->call($tool, $args + ['confirm' => false]);
 			$args += ['confirm' => true];
 			if (isset($plan['body']->result->structuredContent->plan_state)) {
 				$args['plan_state'] = $plan['body']->result->structuredContent->plan_state;

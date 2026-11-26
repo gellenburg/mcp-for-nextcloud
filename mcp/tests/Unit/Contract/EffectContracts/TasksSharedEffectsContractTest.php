@@ -55,7 +55,7 @@ final class TasksSharedEffectsContractTest extends TestCase {
 			$this->gate->serve(fn (): array => [$this->module()]);
 			$t = new EffectTranscript($this, $tool . '.shared');
 			$args = ['calendar' => '/remote.php/dav/calendars/alice/team/', 'uid' => 'task'] + $extra;
-			$plan = $this->gate->call($tool, $args)['body'];
+			$plan = $this->gate->call($tool, $args + ['confirm' => false])['body'];
 			$this->assertTrue($plan->result->structuredContent->requiresConfirmation ?? false, json_encode($plan));
 			$args += ['confirm' => true, 'etag' => $plan->result->structuredContent->etag];
 			$before = $this->store->objects;

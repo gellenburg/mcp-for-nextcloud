@@ -55,10 +55,11 @@ final class DeckRemainingEffectsContractTest extends TestCase {
 	public function testDependencyCyclesKeepTheNativeRows(): void {
 		$tool = 'deck_add_card_dependency';
 		$args = ['cardId' => 8, 'targetId' => 7];
-		$plan = $this->gate->call($tool, $args);
+		$preview = $args + ['confirm' => false];
+		$plan = $this->gate->call($tool, $preview);
 		$this->assertTrue($plan['body']->result->structuredContent->requiresConfirmation ?? false);
 		$t = new EffectTranscript($this, 'deck.dependency-cycle');
-		$t->record('acyclic-preview', $args, $plan, $this->state());
+		$t->record('acyclic-preview', $preview, $plan, $this->state());
 		$this->wiring->deck->edges = [7 => [8]];
 		$before = $this->state();
 		foreach (['reverse-confirmed' => $args, 'self-confirmed' => ['cardId' => 7, 'targetId' => 7]] as $step => $request) {
@@ -98,7 +99,7 @@ final class DeckRemainingEffectsContractTest extends TestCase {
 		$this->wiring->files->tree->mountPath = '/alice/files/Propostas';
 		$id = $this->wiring->files->tree->nodes[$path]['id'];
 		$args = ['cardId' => 7, 'fileId' => $id];
-		$plan = $this->gate->call('deck_link_card_file', $args)['body'];
+		$plan = $this->gate->call('deck_link_card_file', $args + ['confirm' => false])['body'];
 		$this->assertTrue($plan->result->structuredContent->requiresConfirmation ?? false, json_encode($plan) . json_encode($this->gate->logged()));
 		$args += ['confirm' => true, 'plan_state' => $plan->result->structuredContent->plan_state];
 		$t = new EffectTranscript($this, 'deck.link-shared');
@@ -118,7 +119,7 @@ final class DeckRemainingEffectsContractTest extends TestCase {
 		$file = $this->wiring->files->tree->nodes[DeckGatewayWiring::FILE]['id'];
 		foreach ([7, 8] as $card) {
 			$args = ['cardId' => $card, 'fileId' => $file];
-			$plan = $this->gate->call('deck_link_card_file', $args)['body'];
+			$plan = $this->gate->call('deck_link_card_file', $args + ['confirm' => false])['body'];
 			$this->assertTrue($plan->result->structuredContent->requiresConfirmation ?? false, json_encode($plan) . json_encode($this->gate->logged()));
 			$this->gate->call('deck_link_card_file', $args + ['confirm' => true, 'plan_state' => $plan->result->structuredContent->plan_state]);
 		}

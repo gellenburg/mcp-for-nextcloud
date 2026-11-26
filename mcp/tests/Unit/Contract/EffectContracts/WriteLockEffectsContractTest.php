@@ -66,8 +66,8 @@ final class WriteLockEffectsContractTest extends TestCase {
 			$lock = new FakeLock($id, ILock::TYPE_USER, 'alice');
 			$locks->put($lock);
 			$t = new EffectTranscript($this, $tool . '.own-lock');
-			$plan = $gate->call($tool, $args);
-			$t->record('own-locked-preview', $args, $plan, FilesEffectState::tree($tree));
+			$plan = $gate->call($tool, $args + ['confirm' => false]);
+			$t->record('own-locked-preview', $args + ['confirm' => false], $plan, FilesEffectState::tree($tree));
 			$this->assertTrue($plan['body']->result->structuredContent->requiresConfirmation ?? false, json_encode($plan));
 			$args += ['confirm' => true];
 			if (isset($plan['body']->result->structuredContent->plan_state)) {
@@ -100,8 +100,8 @@ final class WriteLockEffectsContractTest extends TestCase {
 	private function refused(EffectsGate $gate, FakeTree $tree, string $tool, array $args): void {
 		$t = new EffectTranscript($this, $tool . '.locked');
 		$before = FilesEffectState::tree($tree);
-		$plan = $gate->call($tool, $args);
-		$t->record('locked-preview', $args, $plan, FilesEffectState::tree($tree));
+		$plan = $gate->call($tool, $args + ['confirm' => false]);
+		$t->record('locked-preview', $args + ['confirm' => false], $plan, FilesEffectState::tree($tree));
 		$args += ['confirm' => true];
 		if (isset($plan['body']->result->structuredContent->plan_state)) {
 			$args['plan_state'] = $plan['body']->result->structuredContent->plan_state;

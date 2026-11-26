@@ -6,7 +6,8 @@
                 "path": "/Docs/old.md",
                 "etag": "<etag#1>",
                 "old": "old",
-                "new": "new"
+                "new": "new",
+                "confirm": false
             },
             "response": {
                 "status": 200,

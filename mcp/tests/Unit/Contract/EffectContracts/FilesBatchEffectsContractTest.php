@@ -101,7 +101,7 @@ final class FilesBatchEffectsContractTest extends TestCase {
 		// Another client renames one item of batch 3 after it ran.
 		$this->tree->node(self::OUTBOX . '/Lote3/b3.md')->move(self::OUTBOX . '/Lote3/outro.md');
 		$this->tree->ops = [];
-		foreach (['diverged-plan' => ['batch_id' => 3], 'diverged-confirmed' => ['batch_id' => 3, 'confirm' => true],
+		foreach (['diverged-plan' => ['batch_id' => 3, 'confirm' => false], 'diverged-confirmed' => ['batch_id' => 3, 'confirm' => true],
 			'unknown-confirmed' => ['batch_id' => 99, 'confirm' => true]] as $step => $arguments) {
 			$response = $this->gate->call('files_undo_batch', $arguments);
 			$transcript->record($step, $arguments, $response, $this->state());

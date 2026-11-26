@@ -84,7 +84,7 @@ final class TablesUpdateEffectsContractTest extends TestCase {
 		$this->app->withTable(WriteScene::TABLE, 'carol')->grant('alice', 'table', WriteScene::TABLE, 'read', 'update');
 		$t = new EffectTranscript($this, 'tables.update-shared');
 		$args = ['table_id' => WriteScene::TABLE, 'row_id' => self::ROW, 'cells' => self::CELLS];
-		$plan = $this->gate->call('tables_update_row', $args)['body'];
+		$plan = $this->gate->call('tables_update_row', $args + ['confirm' => false])['body'];
 		$args += ['confirm' => true, 'plan_state' => $plan->result->structuredContent->plan_state];
 		$before = $this->state();
 		$out = $this->gate->call('tables_update_row', $args);

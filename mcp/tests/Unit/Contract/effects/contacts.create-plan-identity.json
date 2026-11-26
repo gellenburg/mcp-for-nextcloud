@@ -4,7 +4,8 @@
             "step": "preview",
             "request": {
                 "addressbook": "/remote.php/dav/addressbooks/users/alice/personal/",
-                "name": "Ana"
+                "name": "Ana",
+                "confirm": false
             },
             "response": {
                 "status": 200,

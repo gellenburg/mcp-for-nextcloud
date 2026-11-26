@@ -13,7 +13,8 @@
             "tool": "files_share",
             "arguments": {
                 "path": "/Documentos/ata.md",
-                "with": "link"
+                "with": "link",
+                "confirm": false
             },
             "response": {
                 "status": 200,
@@ -90,7 +91,8 @@
             "tool": "files_unshare",
             "arguments": {
                 "path": "/Documentos/pauta.md",
-                "with": "link"
+                "with": "link",
+                "confirm": false
             },
             "response": {
                 "status": 200,
@@ -146,7 +148,8 @@
             "tool": "files_share",
             "arguments": {
                 "path": "/Documentos/ata.md",
-                "with": "link"
+                "with": "link",
+                "confirm": false
             },
             "response": {
                 "status": 200,

@@ -47,7 +47,7 @@ final class FilesGuestExternalContractTest extends TestCase {
 		$this->record('regular-confirmed', $this->confirmation($this->record('regular-plan', $first), $first));
 		self::assertArrayHasKey('/alice/files/Externo/primeiro.txt', $this->tree->nodes, 'a regular account writes on external storage');
 		$second = $this->create('/Externo/segundo.txt');
-		$valid = $this->confirmation($this->gate->call('files_create', $second)['body'], $second);
+		$valid = $this->confirmation($this->gate->call('files_create', $second + ['confirm' => false])['body'], $second);
 		$personal = $this->create('/Documentos/proprio.txt');
 		$this->gate->guest(['files']);
 		$this->wiring->guestHidesExternal = true;
@@ -93,6 +93,9 @@ final class FilesGuestExternalContractTest extends TestCase {
 	 * @return mixed the JSON-RPC body, after recording request, answer and the files with the write log
 	 */
 	private function record(string $name, array $arguments): mixed {
+		if (str_ends_with($name, '-plan')) {
+			$arguments += ['confirm' => false];
+		}
 		$response = $this->gate->call('files_create', $arguments);
 		$files = array_keys(array_filter($this->tree->nodes, static fn (array $node): bool => $node['type'] === 'file'));
 		$this->steps[] = ['step' => $name, 'arguments' => $arguments, 'response' => $response,
