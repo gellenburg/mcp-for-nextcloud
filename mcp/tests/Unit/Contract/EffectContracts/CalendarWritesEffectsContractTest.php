@@ -96,7 +96,7 @@ final class CalendarWritesEffectsContractTest extends TestCase {
 		$this->assertSame(3, $this->scene->calendarOf('entrega'), 'the confirmed transfer left the event in the calendar of bob');
 		$this->assertSame(['operation' => 'move', 'calendar' => 'personal', 'object' => 'entrega.ics', 'target' => 'team_shared_by_bob',
 			'etag' => $this->etagOfFixture('entrega')], $this->scene->state()['dav'][0], 'one MOVE with the If-Match of the plan');
-		$unacknowledged = $flow->confirmed($this->gate->call($flow->tool, $flow->arguments())['body']);
+		$unacknowledged = $flow->confirmed($this->gate->call($flow->tool, $flow->arguments() + ['confirm' => false])['body']);
 		unset($unacknowledged['confirm_shared']);
 		$before = $this->scene->state();
 		$body = $this->gate->call($flow->tool, $unacknowledged)['body'];
@@ -147,7 +147,7 @@ final class CalendarWritesEffectsContractTest extends TestCase {
 	 * @return array<string, mixed> the decoded result of a plan asked now and confirmed at once
 	 */
 	private function confirmNow(CriticalFlow $flow): array {
-		$body = $this->gate->call($flow->tool, $flow->confirmed($this->gate->call($flow->tool, $flow->arguments())['body']))['body'];
+		$body = $this->gate->call($flow->tool, $flow->confirmed($this->gate->call($flow->tool, $flow->arguments() + ['confirm' => false])['body']))['body'];
 		$this->assertFalse($body->result->isError ?? isset($body->error), 'the confirmation must succeed: ' . json_encode($body));
 		return json_decode($body->result->content[0]->text, true, 512, JSON_THROW_ON_ERROR);
 	}
@@ -160,7 +160,7 @@ final class CalendarWritesEffectsContractTest extends TestCase {
 	 * @return void
 	 */
 	private function assertStaleEtagIsRefused(CriticalFlow $flow, string $uid): void {
-		$stale = $flow->confirmed($this->gate->call($flow->tool, $flow->arguments())['body']);
+		$stale = $flow->confirmed($this->gate->call($flow->tool, $flow->arguments() + ['confirm' => false])['body']);
 		$this->assertArrayHasKey('etag', $stale, 'the plan must carry the ETag of the event');
 		$calendarId = $this->scene->calendarOf($uid);
 		$row = $this->scene->store->objects[$calendarId][$uid . '.ics'];

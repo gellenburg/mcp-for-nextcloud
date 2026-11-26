@@ -90,7 +90,7 @@ final class TasksEffectsContractTest extends TestCase {
 	 * @return void
 	 */
 	private function assertSecondCreationDrawsItsOwnUid(CriticalFlow $flow): void {
-		$body = $this->gate->call($flow->tool, $flow->confirmed($this->gate->call($flow->tool, $flow->arguments())['body']))['body'];
+		$body = $this->gate->call($flow->tool, $flow->confirmed($this->gate->call($flow->tool, $flow->arguments() + ['confirm' => false])['body']))['body'];
 		$this->assertFalse($body->result->isError ?? false, 'a second creation must succeed: ' . json_encode($body));
 		$this->assertCount(2, $this->store->objects[1], 'two creations are two objects');
 		$this->random->assertShapes($this);
