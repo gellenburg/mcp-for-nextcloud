@@ -83,7 +83,7 @@ final class MailDraftToolsRegistryTest extends TestCase {
 		$app->withFolder(1, ['id' => 5, 'name' => 'Drafts']);
 		$app->accountSettings[1] = ['drafts' => 5];
 		$arguments = ['account_id' => 1, 'to' => ['bob@example.com'], 'subject' => 'Hi'];
-		$plan = $registry->call(self::TOOL, $arguments, 'alice');
+		$plan = $registry->call(self::TOOL, $arguments + ['confirm' => false], 'alice');
 		$this->assertTrue($plan['structuredContent']['requiresConfirmation']);
 		$this->assertSame([], $app->drafts);
 

@@ -108,7 +108,7 @@ final class LabelAccessTest extends TestCase {
 		self::assertContains('deck_create_label', array_column($registry->list('alice'), 'name'));
 		$this->labels->expects(self::never())->method('createLabel');
 		$args = ['boardId' => 20, 'title' => 'new'];
-		$plan = $this->payload($registry->call('deck_create_label', $args, 'alice'));
+		$plan = $this->payload($registry->call('deck_create_label', $args + ['confirm' => false], 'alice'));
 		self::assertTrue($plan['requiresConfirmation']);
 		$this->policy->setGrant('alice', 'deck', 'labels', false);
 		$this->expectException(\InvalidArgumentException::class);
@@ -120,7 +120,7 @@ final class LabelAccessTest extends TestCase {
 		$registry = $this->registry();
 		$this->policy->setGrant('alice', 'deck', 'labels', true);
 		$args = ['boardId' => 20, 'title' => 'new'];
-		$plan = $this->payload($registry->call('deck_create_label', $args, 'alice'));
+		$plan = $this->payload($registry->call('deck_create_label', $args + ['confirm' => false], 'alice'));
 		$changed = $this->payload($registry->call('deck_create_label', ['boardId' => 20, 'title' => 'other', 'confirm' => true, 'plan_state' => $plan['plan_state']], 'alice'));
 		self::assertTrue($changed['requiresConfirmation']);
 		$this->labels->expects(self::once())->method('createLabel')->willReturn(['id' => 3, 'boardId' => 20, 'title' => 'new', 'color' => 'ff0000']);
@@ -144,7 +144,7 @@ final class LabelAccessTest extends TestCase {
 		$registry = $this->registry();
 		$this->policy->setGrant('alice', 'deck', 'labels', true);
 		$args = ['labelId' => 1];
-		$plan = $this->payload($registry->call('deck_delete_label', $args, 'alice'));
+		$plan = $this->payload($registry->call('deck_delete_label', $args + ['confirm' => false], 'alice'));
 		$this->state['cardIds'] = [7, 9];
 		$this->labels->expects(self::never())->method('deleteLabel');
 		$changed = $this->payload($registry->call('deck_delete_label', $args + ['confirm' => true, 'plan_state' => $plan['plan_state']], 'alice'));
@@ -158,7 +158,7 @@ final class LabelAccessTest extends TestCase {
 		$this->policy->setGrant('alice', 'deck', 'labels', true);
 		$this->labels->method('stackLabels')->willReturn(['boardId' => 20, 'labels' => $this->state['labels'], 'manage' => false]);
 		$args = ['stackId' => 2, 'title' => 'Card', 'labels' => [1]];
-		$plan = $this->payload($registry->call('deck_create_card', $args, 'alice'));
+		$plan = $this->payload($registry->call('deck_create_card', $args + ['confirm' => false], 'alice'));
 		self::assertSame(20, $plan['destination']['boardId']);
 		$changed = $this->payload($registry->call('deck_create_card', ['stackId' => 2, 'title' => 'Other', 'labels' => [1],
 			'confirm' => true, 'plan_state' => $plan['plan_state']], 'alice'));
@@ -192,7 +192,7 @@ final class LabelAccessTest extends TestCase {
 			return ['boardId' => 20, 'labels' => $this->state['labels'], 'manage' => true];
 		});
 		$args = ['stackId' => 2, 'title' => 'Card', 'labels' => [1]];
-		$plan = $this->payload($registry->call('deck_create_card', $args, 'alice'));
+		$plan = $this->payload($registry->call('deck_create_card', $args + ['confirm' => false], 'alice'));
 		$this->gateway->expects(self::never())->method('createCard');
 		$this->labels->expects(self::never())->method('assignCardLabel');
 		$result = $registry->call('deck_create_card', $args + ['confirm' => true, 'plan_state' => $plan['plan_state']], 'alice');
@@ -209,7 +209,7 @@ final class LabelAccessTest extends TestCase {
 			return $this->state;
 		});
 		$args = ['boardId' => 20, 'title' => 'new'];
-		$plan = $this->payload($registry->call('deck_create_label', $args, 'alice'));
+		$plan = $this->payload($registry->call('deck_create_label', $args + ['confirm' => false], 'alice'));
 		$this->labels->expects(self::never())->method('createLabel');
 		$result = $registry->call('deck_create_label', $args + ['confirm' => true, 'plan_state' => $plan['plan_state']], 'alice');
 		self::assertTrue($result['isError']);

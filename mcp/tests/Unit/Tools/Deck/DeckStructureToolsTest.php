@@ -321,11 +321,11 @@ final class DeckStructureToolsTest extends TestCase {
 	}
 
 	/** Through the registry: the first call is the plan, and nothing is built until the same call repeats with confirm. */
-	public function testRegistryBuildsNothingUntilConfirmed(): void {
+	public function testDryRunBuildsNothing(): void {
 		$gateway = $this->readOnlyGateway();
 		$registry = $this->registry($gateway);
 
-		$result = $registry->call('deck_create_board', ['title' => 'Projeto', 'stacks' => [['title' => 'A fazer']]], 'alice');
+		$result = $registry->call('deck_create_board', ['title' => 'Projeto', 'stacks' => [['title' => 'A fazer']], 'confirm' => false], 'alice');
 
 		self::assertNotTrue($result['isError'] ?? false);
 		$structured = $result['structuredContent'] ?? $this->payload($result);

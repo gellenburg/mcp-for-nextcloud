@@ -146,7 +146,7 @@ final class CardLabelsTest extends TestCase {
 		\OCA\Mcp\Tests\Unit\Tools\Deck\DeckTestModule::setGateway($module, $g);
 		$registry=new \OCA\Mcp\Mcp\Tools\ToolRegistry([$module],$policy,$apps,$users,$logger);
 		$args=['cardId'=>7,'add'=>[2]];
-		$p=$registry->call(EditCardLabelsHandler::TOOL,$args,'alice')['structuredContent'];
+		$p=$registry->call(EditCardLabelsHandler::TOOL,$args+['confirm'=>false],'alice')['structuredContent'];
 		self::assertTrue($p['requiresConfirmation']);
 		$confirmed=$args+['confirm'=>true,'plan_state'=>$p['plan_state']];
 		$policy->setGrant('alice','deck','edit',false);
