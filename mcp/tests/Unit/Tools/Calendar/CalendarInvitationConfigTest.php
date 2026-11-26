@@ -55,7 +55,7 @@ final class CalendarInvitationConfigTest extends CalendarTestCase {
 		$args = $tool === 'calendar_create_event'
 			? ['calendar' => self::PERSONAL, 'summary' => 'Neutral event', 'start' => '2026-12-02', 'end' => '2026-12-03', 'allDay' => true]
 			: ['calendar' => self::PERSONAL, 'uid' => 'event', 'description' => 'Neutral description'];
-		$result = $this->registry->call($tool, $args, 'alice');
+		$result = $this->registry->call($tool, $args + ['confirm' => false], 'alice');
 		self::assertArrayNotHasKey('isError', $result, $result['content'][0]['text'] ?? '');
 		$plan = self::json($result);
 		self::assertTrue($plan['requiresConfirmation']);

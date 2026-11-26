@@ -29,13 +29,7 @@ use OCA\Mcp\Mcp\Tools\Results\ToolFailure;
 use OCA\Mcp\Mcp\Tools\Results\ToolResult;
 use OCA\Mcp\Mcp\Tools\Validation\ArgumentValidator;
 
-/**
- * Single policy point for tools/list and tools/call: grant and app availability are re-read on every
- * request, and no tool that changes something runs without `confirm: true`.
- *
- * The two decisions are here and not in the modules on purpose. A module that forgets the check cannot
- * write anything by accident, and a new module is gated by writing `operation: 'create'` and nothing else.
- */
+/** Central authorization and dispatch: catalog writes execute under current grants and native guards. */
 class ToolRegistry {
 	private ?ToolGuide $guide = null;
 	private ToolAccess $access;
@@ -122,10 +116,8 @@ class ToolRegistry {
 	}
 
 	/**
-	 * A write without `confirm: true` answers with its plan and never reaches the module; with it, the module
-	 * runs and every guard it holds — ACL, ETag, ownership, {@see PlanState} — is checked again at that moment. A
-	 * module that finds a state other than the one its plan showed throws {@see PlanChanged} and the answer is the
-	 * new plan, in the same envelope.
+	 * Explicit dry runs return plans; direct catalog writes prepare state internally and recheck access before execution.
+	 * A stale plan is refused, never retried automatically.
 	 *
 	 * @param string $name tool name
 	 * @param array<string, mixed> $arguments raw arguments from tools/call

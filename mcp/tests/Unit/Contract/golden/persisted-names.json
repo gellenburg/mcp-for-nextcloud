@@ -43,6 +43,7 @@
             "OCA\\Mcp\\Platform\\FileAccess\\FileReplacement",
             "OCA\\Mcp\\Mcp\\Resources\\FileTextResource",
             "OCA\\Mcp\\Platform\\Dav\\MetadataServer",
+            "OCA\\Mcp\\Modules\\Files\\Reading\\ReadFileHandler",
             "OCA\\Mcp\\Platform\\Meetings\\MeetingFileRead",
             "OCA\\Mcp\\Mcp\\Resources\\NoteResource",
             "OCA\\Mcp\\Modules\\Calendar\\Integration\\CalendarAvailability",

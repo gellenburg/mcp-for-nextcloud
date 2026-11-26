@@ -63,7 +63,8 @@ final class EventAttachmentOutputTest extends CalendarTestCase {
 
 	#[DataProvider('tools')]
 	public function testNoToolExposesAttachInThePlanOrTheResult(string $tool, array $arguments): void {
-		$first = $this->registry->call($tool, $arguments, 'alice');
+		$read = in_array($tool, ['calendar_check_availability', 'calendar_suggest_times'], true) || str_starts_with($tool, 'calendar_list_');
+		$first = $this->registry->call($tool, $arguments + ($read ? [] : ['confirm' => false]), 'alice');
 		self::assertArrayNotHasKey('isError', $first, $first['content'][0]['text'] ?? '');
 		self::assertNoFileReference($first, "$tool without confirm");
 		if ($tool === 'calendar_list_events') {

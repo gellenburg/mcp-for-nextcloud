@@ -36,7 +36,7 @@ final class CalendarWarningFallbackTest extends CalendarTestCase {
 			: ['start' => '2026-12-01T09:00:00Z', 'end' => '2026-12-01T10:00:00Z', 'timeZone' => 'Europe/Berlin']);
 		$this->store->addObject(1, 'edit.ics', self::ics("UID:edit\nSUMMARY:Neutral existing\nDTSTART:20261101T090000Z\nDTEND:20261101T100000Z"));
 		foreach (['calendar_create_event', 'calendar_update_event'] as $tool) {
-			$result = $this->registry->call($tool, $args + ($tool === 'calendar_update_event' ? ['uid' => 'edit'] : []), 'alice');
+			$result = $this->registry->call($tool, $args + ($tool === 'calendar_update_event' ? ['uid' => 'edit'] : []) + ['confirm' => false], 'alice');
 			self::assertArrayNotHasKey('isError', $result, $result['content'][0]['text'] ?? '');
 			$plan = self::json($result);
 			self::assertTrue($plan['requiresConfirmation']);

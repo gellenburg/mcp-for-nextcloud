@@ -7,18 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Mcp\Mcp\Guide;
 use OCA\Mcp\Mcp\Tools\{Results\ToolFailure, Results\ToolResult, ToolModule, ToolPresentation};
-/**
- * The `mcp_guide` tool: what the model needs to know about the other tools, built from the very
- * definitions tools/list is built from.
- *
- * Everything printed here comes from a ToolModule::definitions() entry the registry already filtered for
- * this user — the title from ToolPresentation, the description, the inputSchema and the annotations — so
- * a guide can never describe a tool that changed: it changes with it. What no schema can carry is the
- * behaviour around the tools, and that is what {@see ToolGuideNotes} adds, one short note per module, next
- * to the module itself.
- *
- * The guide only reads: it never calls a module, it only renders what the module declared.
- */
+/** Read-only tool guide built from authorized definitions and module behaviour notes. */
 final class ToolGuide {
 	/** Technical name of the guide tool. */
 	public const TOOL = 'mcp_guide';
@@ -257,9 +246,7 @@ final class ToolGuide {
 	/**
 	 * The write gates of a tool.
 	 *
-	 * Every tool that is not a read asks for `confirm: true`, and the schema says so: the registry
-	 * injects the argument into the write tools and refuses the call without it, so the guide derives the
-	 * rule from the operation instead of listing which tools happen to have the property today.
+	 * Direct catalog writes have no conversational gate; legacy module gates are described from their schemas.
 	 *
 	 * @param array<string, mixed> $definition enriched definition of registry::definitions()
 	 * @return list<array{name:string, summary:string}>

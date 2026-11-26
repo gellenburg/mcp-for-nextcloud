@@ -206,11 +206,11 @@ final class NotesPreviewTest extends TestCase {
 
 	/** @return array<string, array{array<string, mixed>}> */
 	public static function unconfirmedProvider(): array {
-		return ['absent' => [[]], 'false' => [['confirm' => false]]];
+		return ['false' => [['confirm' => false]]];
 	}
 
 	#[DataProvider('unconfirmedProvider')]
-	public function testRegistryAnswersWithThePlanUnlessConfirmed(array $confirm): void {
+	public function testExplicitDryRunReturnsPlan(array $confirm): void {
 		$result = $this->registry()->call('notes_edit', ['id' => $this->ata, 'content' => 'novo'] + $confirm, 'alice');
 
 		$out = $result['structuredContent'];
@@ -219,8 +219,8 @@ final class NotesPreviewTest extends TestCase {
 		$this->assertNothingWritten();
 	}
 
-	public function testRegistryRunsTheWriteOnceConfirmed(): void {
-		$result = $this->registry()->call('notes_edit', ['id' => $this->ata, 'content' => 'novo', 'confirm' => true], 'alice');
+	public function testRegistryRunsTheWriteDirectlyOnce(): void {
+		$result = $this->registry()->call('notes_edit', ['id' => $this->ata, 'content' => 'novo'], 'alice');
 
 		$out = json_decode($result['content'][0]['text'], true, 512, JSON_THROW_ON_ERROR);
 		$this->assertArrayNotHasKey('requiresConfirmation', $out);

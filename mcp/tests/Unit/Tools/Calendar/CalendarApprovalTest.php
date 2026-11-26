@@ -43,8 +43,8 @@ final class CalendarApprovalTest extends CalendarTestCase {
 	}
 
 	#[DataProvider('writes')]
-	public function testWithoutConfirmReturnsPlanAndDispatchesNothing(string $tool, array $args): void {
-		foreach ([[], ['confirm' => false]] as $extra) {
+	public function testExplicitDryRunReturnsPlanAndDispatchesNothing(string $tool, array $args): void {
+		foreach ([['confirm' => false]] as $extra) {
 			$plan = self::json($this->registry->call($tool, $args + $extra, 'alice'));
 			self::assertTrue($plan['requiresConfirmation']);
 			self::assertSame($tool, $plan['action']);
@@ -64,6 +64,14 @@ final class CalendarApprovalTest extends CalendarTestCase {
 		self::assertCount(1, $this->dav->calls);
 	}
 
+	#[DataProvider('writes')]
+	public function testDirectWriteDispatchesOnceWithoutConfirmation(string $tool, array $args): void {
+		$result = $this->registry->call($tool, $args, 'alice');
+		self::assertArrayNotHasKey('isError', $result, $result['content'][0]['text'] ?? '');
+		self::assertArrayNotHasKey('requiresConfirmation', self::json($result));
+		self::assertCount(1, $this->dav->calls);
+	}
+
 	/**
 	 * `confirm` is decided by the registry alone: the module never checks it again, so a call that reached
 	 * it dispatches once whatever `confirm` says, and the registry is the only place that can stop it.
@@ -77,7 +85,7 @@ final class CalendarApprovalTest extends CalendarTestCase {
 
 	#[DataProvider('existingEventWrites')]
 	public function testPlanEtagIsAcceptedAndUsedOnTheConfirmedCall(string $tool, array $args): void {
-		$plan = self::json($this->registry->call($tool, $args, 'alice'));
+		$plan = self::json($this->registry->call($tool, $args + ['confirm' => false], 'alice'));
 		self::assertNotEmpty($plan['etag']);
 		self::assertSame('event', $plan['uid']);
 		self::json($this->registry->call($tool, $args + ['confirm' => true, 'confirm_shared' => true, 'etag' => $plan['etag']], 'alice'));
@@ -86,7 +94,7 @@ final class CalendarApprovalTest extends CalendarTestCase {
 
 	#[DataProvider('existingEventWrites')]
 	public function testEventChangedAfterThePlanRefusesTheConfirmedCall(string $tool, array $args): void {
-		$plan = self::json($this->registry->call($tool, $args, 'alice'));
+		$plan = self::json($this->registry->call($tool, $args + ['confirm' => false], 'alice'));
 		$this->store->objects[1]['event.ics']['etag'] = '"changed-by-someone-else"';
 		self::assertToolError($this->registry->call($tool, $args + ['confirm' => true, 'confirm_shared' => true, 'etag' => $plan['etag']], 'alice'), 'etag');
 		$this->assertNoWrites();
@@ -104,7 +112,7 @@ final class CalendarApprovalTest extends CalendarTestCase {
 
 	public function testTimingAndParticipantsAreDisplayedWithInvitationConsequences(): void {
 		$this->store->objects[1]['event.ics']['data'] = self::ics("UID:event\nSUMMARY:Before\nDTSTART:20261001T120000Z\nDTEND:20261001T130000Z\nATTENDEE:mailto:bob@example.invalid");
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T14:00:00Z', 'end' => '2026-10-01T15:00:00Z', 'attendees' => ['carla'], 'send_invitations' => true], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T14:00:00Z', 'end' => '2026-10-01T15:00:00Z', 'attendees' => ['carla'], 'send_invitations' => true] + ['confirm' => false], 'alice'));
 		self::assertNotSame($plan['before']['start'], $plan['after']['start']);
 		self::assertSame(['mailto:carla@example.invalid'], $plan['participants']['added']);
 		self::assertSame(['mailto:bob@example.invalid'], $plan['participants']['removed']);
@@ -114,7 +122,7 @@ final class CalendarApprovalTest extends CalendarTestCase {
 	}
 
 	public function testSuppressedInvitationsAreStatedInThePlan(): void {
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'summary' => 'After'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'summary' => 'After'] + ['confirm' => false], 'alice'));
 		self::assertFalse($plan['scheduling']['requested']);
 		self::assertStringContainsString('Nenhum convite', $plan['scheduling']['message']);
 		self::assertSame('Before', $plan['before']['summary']);
@@ -122,14 +130,14 @@ final class CalendarApprovalTest extends CalendarTestCase {
 	}
 
 	public function testDeleteExplainsTrashAndCancelWithoutScheduling(): void {
-		$plan = self::json($this->registry->call('calendar_delete_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'send_invitations' => true], 'alice'));
+		$plan = self::json($this->registry->call('calendar_delete_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'send_invitations' => true] + ['confirm' => false], 'alice'));
 		self::assertTrue($plan['recoverable']);
 		self::assertStringContainsString('CANCEL', $plan['scheduling']['message']);
 		$this->assertNoWrites();
 	}
 
 	public function testMoveAndTransferShowDestinationAndNoNotification(): void {
-		$plan = self::json($this->registry->call('calendar_move_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::WORK], 'alice'));
+		$plan = self::json($this->registry->call('calendar_move_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::WORK] + ['confirm' => false], 'alice'));
 		self::assertSame(self::WORK, $plan['destination']['path']);
 		self::assertStringContainsString('não', $plan['scheduling']['message']);
 		$this->assertNoWrites();
@@ -184,7 +192,7 @@ final class CalendarApprovalTest extends CalendarTestCase {
 	public function testPlanOnSomebodyElsesCalendarNamesTheOwnerAndWritesNothing(string $tool, array $args): void {
 		$this->store->addCalendar(self::ALICE, 8, 'other_shared_by_bob', self::BOB);
 		$this->store->addObject(3, 'shared.ics', self::ics("UID:shared\nSUMMARY:Reuniao do Roberto\nDTSTART:20261001T120000Z\nDTEND:20261001T130000Z"));
-		$plan = self::json($this->registry->call($tool, $args, 'alice'));
+		$plan = self::json($this->registry->call($tool, $args + ['confirm' => false], 'alice'));
 		self::assertTrue($plan['requiresConfirmation']);
 		self::assertSame('bob', $plan['shared'][0]['owner']);
 		$this->assertNoWrites();
@@ -199,16 +207,16 @@ final class CalendarApprovalTest extends CalendarTestCase {
 
 	/** The text of the plan, which is what the person reads, names the owner of the shared calendar. */
 	public function testThePlanTextNamesTheOwnerOfTheSharedCalendar(): void {
-		$result = $this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'summary' => 'Planejamento', 'start' => '2026-10-02', 'end' => '2026-10-03', 'allDay' => true], 'alice');
+		$result = $this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'summary' => 'Planejamento', 'start' => '2026-10-02', 'end' => '2026-10-03', 'allDay' => true] + ['confirm' => false], 'alice');
 		self::assertStringContainsString('- Calendário *Equipe (bob)* compartilhado por Roberto Almeida.', $result['content'][0]['text']);
 
-		$own = $this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Planejamento', 'start' => '2026-10-02', 'end' => '2026-10-03', 'allDay' => true], 'alice');
+		$own = $this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Planejamento', 'start' => '2026-10-02', 'end' => '2026-10-03', 'allDay' => true] + ['confirm' => false], 'alice');
 		self::assertStringNotContainsString('compartilhado por', $own['content'][0]['text']);
 	}
 
 	public function testSharedCalendarPlanWarnsAndExecutionStillNeedsTheSharedAcknowledgement(): void {
 		$args = ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::TEAM];
-		$plan = self::json($this->registry->call('calendar_transfer_event', $args, 'alice'));
+		$plan = self::json($this->registry->call('calendar_transfer_event', $args + ['confirm' => false], 'alice'));
 		self::assertSame('bob', $plan['shared'][0]['owner']);
 		$this->assertNoWrites();
 		self::assertToolError($this->registry->call('calendar_transfer_event', $args + ['confirm' => true], 'alice'), 'compartilhado');
@@ -219,7 +227,7 @@ final class CalendarApprovalTest extends CalendarTestCase {
 
 	public function testPreparingNeverSchedules(): void {
 		$args = ['calendar' => self::PERSONAL, 'uid' => 'event', 'summary' => 'After', 'send_invitations' => true];
-		self::json($this->registry->call('calendar_update_event', $args, 'alice'));
+		self::json($this->registry->call('calendar_update_event', $args + ['confirm' => false], 'alice'));
 		$this->assertNoWrites();
 	}
 
