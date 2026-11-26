@@ -96,6 +96,36 @@ final class ToolRegistryTest extends TestCase {
 		return new ToolRegistry([$module], $this->policy, $apps, $users, $this->logger, $guests);
 	}
 
+	/** Direct checkout uses the planned revision, while explicit dry runs and shared plans do not execute. */
+	public function testDirectCheckoutUsesInternalPreview(): void {
+		$module = new class implements ToolModule, \OCA\Mcp\Mcp\Tools\PreviewsWrites {
+			public array $calls = [];
+			public bool $shared = false;
+			public function definitions(): array {
+				return [['name' => 'files_checkout', 'description' => 'Checkout', 'module' => 'files', 'operation' => 'edit',
+					'inputSchema' => ['type' => 'object', 'properties' => ['path' => ['type' => 'string'], 'etag' => ['type' => 'string']], 'required' => ['path']]]];
+			}
+			public function preview(string $name, array $arguments, string $userId): array {
+				return ['etag' => 'revision-1', 'requiresSharedConfirmation' => $this->shared, 'shared' => $this->shared ? [['path' => '/test.png']] : []];
+			}
+			public function call(string $name, array $arguments, string $userId): array {
+				$this->calls[] = $arguments;
+				return ToolResult::json(['executed' => true]);
+			}
+		};
+		$this->policy->setGrant('alice', 'files', 'edit', true);
+		$registry = new ToolRegistry([$module], $this->policy, $this->createMock(IAppManager::class), $this->createMock(IUserManager::class), $this->logger);
+		$result = $registry->call('files_checkout', ['path' => '/test.png'], 'alice');
+		self::assertArrayNotHasKey('isError', $result);
+		self::assertSame([['path' => '/test.png', 'etag' => 'revision-1', 'confirm' => true]], $module->calls);
+		$result = $registry->call('files_checkout', ['path' => '/test.png', 'confirm' => false], 'alice');
+		self::assertTrue($result['structuredContent']['requiresConfirmation']);
+		$module->shared = true;
+		$result = $registry->call('files_checkout', ['path' => '/test.png'], 'alice');
+		self::assertTrue($result['structuredContent']['requiresConfirmation']);
+		self::assertCount(1, $module->calls);
+	}
+
 	/** Every registered write gets the same readable envelope, regardless of module preview support. */
 	public function testEveryRegisteredWriteReturnsMarkdownAndStructuredConfirmation(): void {
 		$this->assertEveryWriteEnvelope(false);
