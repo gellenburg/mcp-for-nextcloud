@@ -43,6 +43,7 @@ final class CheckoutService {
 	/** Route each kind of token is spent on; a token presented on the other one is refused. */
 	private const ROUTES = [
 		CheckoutToken::KIND_DOWNLOAD => 'mcp.checkout.download',
+		CheckoutToken::KIND_READ => 'mcp.checkout.download',
 		CheckoutToken::KIND_UPLOAD => 'mcp.checkout.upload',
 		// A create link is a raw upload too, so it is spent on the same route and the controller tells them apart.
 		CheckoutToken::KIND_CREATE => 'mcp.checkout.upload',
@@ -102,6 +103,37 @@ final class CheckoutService {
 			'download_url' => $this->url(CheckoutToken::KIND_DOWNLOAD, $downloadToken),
 			'upload_url' => $this->url(CheckoutToken::KIND_UPLOAD, $uploadToken),
 			'expires_at' => gmdate('Y-m-d\TH:i:s\Z', $now + self::UPLOAD_TTL),
+		];
+	}
+
+	/**
+	 * Issues only a read capability. No upload token, versioning requirement or write grant.
+	 * The existing route rechecks native read access, scope, identity and revision at redemption.
+	 */
+	public function issueRead(string $userId, File $file, string $path, array $access): array {
+		$now = $this->time->getTime();
+		$token = $this->mint(CheckoutToken::KIND_READ);
+		$etag = (string)$file->getEtag();
+		$this->store->insert([
+			'token_hash' => $this->hasher->hash($token),
+			'kind' => CheckoutToken::KIND_READ,
+			'user_id' => $userId,
+			'file_id' => (int)$file->getId(),
+			'path' => $path,
+			'etag' => $etag,
+			'scope' => (string)$access['scope'],
+			'shared_confirmed' => 0,
+			'created_at' => $now,
+			'expires_at' => $now + self::DOWNLOAD_TTL,
+		], $now);
+		return [
+			'path' => $path,
+			'etag' => $etag,
+			'size' => (int)$file->getSize(),
+			'mime' => (string)$file->getMimetype(),
+			'access' => $access,
+			'download_url' => $this->url(CheckoutToken::KIND_READ, $token),
+			'expires_at' => gmdate('Y-m-d\TH:i:s\Z', $now + self::DOWNLOAD_TTL),
 		];
 	}
 

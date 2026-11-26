@@ -272,6 +272,23 @@ final class CheckoutControllerTest extends TestCase {
 		$this->assertSame([], $this->tree->ops);
 	}
 
+	public function testReadOnlyLinkWorksWithoutEditGrantAndCannotUpload(): void {
+		$this->store->rows = [];
+		$this->policy->setGrant('alice', 'files', 'read', true);
+		$this->policy->setGrant('alice', 'files', 'edit', false);
+		$this->issue(CheckoutToken::KIND_READ);
+		$this->assertSame(404, $this->code($this->controller->upload()));
+		$this->assertSame(200, $this->code($this->controller->download()));
+		$this->assertSame(410, $this->code($this->controller->download()));
+	}
+
+	public function testReadOnlyLinkStopsWorkingWhenReadGrantIsRevoked(): void {
+		$this->store->rows = [];
+		$this->issue(CheckoutToken::KIND_READ);
+		$this->policy->setGrant('alice', 'files', 'read', false);
+		$this->assertSame(403, $this->code($this->controller->download()));
+	}
+
 	public function testADownloadTokenIsNotAcceptedOnTheUploadRoute(): void {
 		$this->store->rows = [];
 		$this->issue(CheckoutToken::KIND_DOWNLOAD);

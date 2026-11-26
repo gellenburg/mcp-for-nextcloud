@@ -16,6 +16,8 @@ namespace OCA\Mcp\Modules\Files\Checkout;
 final class CheckoutToken {
 	/** Token may be spent once on the download route. */
 	public const KIND_DOWNLOAD = 'download';
+	/** Read-only capability, requiring files.read rather than files.edit at redemption. */
+	public const KIND_READ = 'read';
 	/** Token may be spent once on the upload route. */
 	public const KIND_UPLOAD = 'upload';
 	/** Token may be spent once on the upload route to create a new file at its path, never over an existing one. */
