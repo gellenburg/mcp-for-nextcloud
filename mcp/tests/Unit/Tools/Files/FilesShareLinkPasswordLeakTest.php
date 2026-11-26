@@ -48,7 +48,7 @@ final class FilesShareLinkPasswordLeakTest extends FilesToolsTestCase {
 	 * @return array<string, mixed> the result of the confirmed call
 	 */
 	private function confirmed(array $arguments): array {
-		$plan = $this->registry->call('files_share', $arguments, 'alice');
+		$plan = $this->registry->call('files_share', $arguments + ['confirm' => false], 'alice');
 		return $this->registry->call('files_share', $arguments + ['confirm' => true, 'plan_state' => $plan['structuredContent']['plan_state']], 'alice');
 	}
 
@@ -61,7 +61,7 @@ final class FilesShareLinkPasswordLeakTest extends FilesToolsTestCase {
 		$arguments = ['path' => self::FILE, 'with' => 'link', 'password' => true];
 
 		$this->linkPasswords = [self::PASSWORD];
-		$plan = $this->registry->call('files_share', $arguments, 'alice');
+		$plan = $this->registry->call('files_share', $arguments + ['confirm' => false], 'alice');
 		self::assertTrue($plan['structuredContent']['requiresConfirmation'] ?? false);
 		$this->assertNoPassword('plano (texto)', $plan['content'][0]['text']);
 		$this->assertNoPassword('plano (structuredContent)', self::all($plan['structuredContent']));
@@ -77,7 +77,7 @@ final class FilesShareLinkPasswordLeakTest extends FilesToolsTestCase {
 		$this->assertNoPassword('files_list_shares por caminho', self::all($this->registry->call('files_list_shares', ['path' => self::FILE], 'alice')));
 
 		$again = ['path' => self::FILE, 'with' => 'link', 'expires' => '2026-10-10'];
-		$secondPlan = $this->registry->call('files_share', $again, 'alice');
+		$secondPlan = $this->registry->call('files_share', $again + ['confirm' => false], 'alice');
 		$this->assertNoPassword('segundo plano', self::all($secondPlan));
 		$second = $this->registry->call('files_share', $again + ['confirm' => true, 'plan_state' => $secondPlan['structuredContent']['plan_state']], 'alice');
 		self::assertArrayNotHasKey('isError', $second);

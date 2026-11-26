@@ -59,8 +59,8 @@ final class MailCardRegistryTest extends MailCardWorld {
 	}
 
 	/** A call without confirm answers the plan with its plan_state, and writes nothing. @return void */
-	public function testACallWithoutConfirmIsThePlan(): void {
-		$answer = $this->registry->call('routines_create_mail_card', self::arguments(), 'alice');
+	public function testExplicitDryRunIsThePlan(): void {
+		$answer = $this->registry->call('routines_create_mail_card', self::arguments(['confirm' => false]), 'alice');
 
 		self::assertTrue($answer['structuredContent']['requiresConfirmation']);
 		self::assertSame(64, strlen($answer['structuredContent']['plan_state']));
@@ -70,7 +70,7 @@ final class MailCardRegistryTest extends MailCardWorld {
 
 	/** A confirmed call whose email changed since the plan answers the new plan through the registry, writing nothing. @return void */
 	public function testAChangedPlanIsAnsweredAsTheNewPlan(): void {
-		$state = $this->registry->call('routines_create_mail_card', self::arguments(), 'alice')['structuredContent']['plan_state'];
+		$state = $this->registry->call('routines_create_mail_card', self::arguments(['confirm' => false]), 'alice')['structuredContent']['plan_state'];
 		$this->mail->withMessage(1, ['id' => 7, 'subject' => 'Pedido 43', 'size' => 2000, 'threadRootId' => 'root-7', 'body' => 'Outro.',
 			'structure' => \OCA\Mcp\Tests\Unit\Tools\Mail\FakeMimePart::multipart('multipart/mixed', [new \OCA\Mcp\Tests\Unit\Tools\Mail\FakeMimePart('text/plain'),
 				new \OCA\Mcp\Tests\Unit\Tools\Mail\FakeMimePart('application/pdf', 'pedido.pdf', 'attachment')]),
@@ -86,7 +86,7 @@ final class MailCardRegistryTest extends MailCardWorld {
 
 	/** The confirmed call with the plan's plan_state saves the file and creates the card. @return void */
 	public function testTheConfirmedCallRunsThroughTheRegistry(): void {
-		$state = $this->registry->call('routines_create_mail_card', self::arguments(), 'alice')['structuredContent']['plan_state'];
+		$state = $this->registry->call('routines_create_mail_card', self::arguments(['confirm' => false]), 'alice')['structuredContent']['plan_state'];
 
 		$answer = $this->registry->call('routines_create_mail_card', self::arguments(['confirm' => true, 'plan_state' => $state]), 'alice');
 

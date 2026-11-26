@@ -128,6 +128,9 @@ final class FilesSharingEffectsContractTest extends TestCase {
 	 * @return mixed the JSON-RPC body, after recording request, answer and share state
 	 */
 	private function record(string $name, string $tool, array $arguments): mixed {
+		if (str_contains($name, '-plan-')) {
+			$arguments += ['confirm' => false];
+		}
 		$response = $this->gate->call($tool, $arguments);
 		$this->steps[] = ['step' => $name, 'tool' => $tool, 'arguments' => $arguments, 'response' => $response, 'state' => $this->state()];
 		return $response['body'];

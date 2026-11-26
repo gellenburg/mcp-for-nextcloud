@@ -206,7 +206,7 @@ final class FilesSharePlanStateTest extends FilesToolsTestCase {
 		$registry = new ToolRegistry([$this->module], $this->sharePolicy, $this->apps, $this->users, $this->logger);
 		$arguments = ['path' => self::FILE, 'with' => 'user:bruno'];
 
-		$plan = $registry->call('files_share', $arguments, 'alice');
+		$plan = $registry->call('files_share', $arguments + ['confirm' => false], 'alice');
 		$state = $plan['structuredContent'][PlanState::ARGUMENT];
 		self::assertStringContainsString('repeat the call with plan_state `' . $state . '`', $plan['content'][0]['text']);
 

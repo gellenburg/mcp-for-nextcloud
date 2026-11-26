@@ -12,7 +12,8 @@
             "arguments": {
                 "path": "/Externo/primeiro.txt",
                 "content": "linha\n",
-                "confirm_shared": true
+                "confirm_shared": true,
+                "confirm": false
             },
             "response": {
                 "status": 200,
@@ -110,7 +111,8 @@
             "arguments": {
                 "path": "/Externo/segundo.txt",
                 "content": "linha\n",
-                "confirm_shared": true
+                "confirm_shared": true,
+                "confirm": false
             },
             "response": {
                 "status": 200,
@@ -177,7 +179,8 @@
             "arguments": {
                 "path": "/Documentos/proprio.txt",
                 "content": "linha\n",
-                "confirm_shared": true
+                "confirm_shared": true,
+                "confirm": false
             },
             "response": {
                 "status": 200,

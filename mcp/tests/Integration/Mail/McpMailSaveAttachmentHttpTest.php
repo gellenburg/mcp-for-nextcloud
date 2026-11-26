@@ -44,9 +44,9 @@ final class McpMailSaveAttachmentHttpTest extends ExclusionTestCase {
 				$path = '/mail-save-' . $kind . '-' . bin2hex(random_bytes(6)) . '.csv';
 				$args = ['message_id' => $message, 'attachment_id' => '2', 'path' => $path];
 				$client = $this->mcp(self::ALICE, $kind);
-				$plan = $client->tool('mail_save_attachment', $args);
+				$plan = $client->tool('mail_save_attachment', $args + ['confirm' => false]);
 				self::assertTrue($plan->ok(), $plan->describe()); self::assertFalse($root->nodeExists(ltrim($path, '/')));
-				$saved = $client->tool('mail_save_attachment', $args + ['confirm' => true]);
+				$saved = $client->tool('mail_save_attachment', $args);
 				self::assertTrue($saved->ok(), $saved->describe());
 				$receipt = $saved->json(); self::assertTrue($receipt['verified']);
 				$file = $root->get(ltrim($path, '/')); $bytes = $file->getContent();
@@ -103,11 +103,11 @@ final class McpMailSaveAttachmentHttpTest extends ExclusionTestCase {
 			$client = $this->mcp(self::ALICE, $kind);
 			$refused = $client->tool('mail_save_attachment', $args + ['confirm' => true]);
 			self::assertTrue($refused->isError()); self::assertSame("old;bytes\r\n", $file->getContent());
-			$plan = $client->tool('mail_save_attachment', $args + ['replace' => true]);
+			$plan = $client->tool('mail_save_attachment', $args + ['replace' => true, 'confirm' => false]);
 			self::assertTrue($plan->ok(), $plan->describe()); self::assertSame("old;bytes\r\n", $file->getContent());
 			$stale = $client->tool('mail_save_attachment', $args + ['replace' => true, 'etag' => 'stale', 'confirm' => true]);
 			self::assertTrue($stale->isError()); self::assertSame($etag, (string)$root->get(ltrim($path, '/'))->getEtag());
-			$saved = $client->tool('mail_save_attachment', $args + ['replace' => true, 'etag' => $etag, 'confirm' => true]);
+			$saved = $client->tool('mail_save_attachment', $args + ['replace' => true, 'etag' => $etag]);
 			self::assertTrue($saved->ok(), $saved->describe());
 			$receipt = $saved->json();
 			self::assertTrue($receipt['verified']); self::assertSame('replaced', $receipt['outcome']);

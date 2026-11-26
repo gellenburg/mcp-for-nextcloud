@@ -122,7 +122,7 @@ final class TasksWritesEffectsContractTest extends TestCase {
 		self::assertArrayHasKey('apagar-2.ics', $this->store->objects[1], 'only the confirmed task is deleted');
 		// The receipt of a confirmed deletion, read directly: deleted and recoverable, after a CalDAV delete.
 		$arguments = ['calendar' => self::TASKS, 'uid' => 'apagar-2'];
-		$body = $this->gate->call('tasks_delete_task', $flow->confirmed($this->gate->call('tasks_delete_task', $arguments)['body']))['body'];
+		$body = $this->gate->call('tasks_delete_task', $flow->confirmed($this->gate->call('tasks_delete_task', $arguments + ['confirm' => false])['body']))['body'];
 		self::assertSame(['uid' => 'apagar-2', 'calendar' => self::TASKS, 'deleted' => true, 'recoverable' => true],
 			json_decode($body->result->content[0]->text ?? 'null', true), json_encode($body));
 		self::assertSame('delete tasks/apagar-2.ics', $this->dav->log[1] ?? null, 'the receipt follows a CalDAV delete');
@@ -164,7 +164,7 @@ final class TasksWritesEffectsContractTest extends TestCase {
 	/** @return void a subtask whose parent went to the trash after the plan is refused and writes nothing */
 	public function testSubtaskOfAParentGoneSinceThePlanIsRefused(): void {
 		$arguments = ['calendar' => self::TASKS, 'summary' => 'Levantar requisitos', 'parent' => 'projeto'];
-		$plan = $this->gate->call('tasks_create_task', $arguments)['body'];
+		$plan = $this->gate->call('tasks_create_task', $arguments + ['confirm' => false])['body'];
 		self::assertTrue($plan->result->structuredContent->requiresConfirmation ?? false, json_encode($plan));
 		$this->dav->delete(EffectsGate::USER, 'tasks', 'projeto.ics');
 		$before = $this->state();
@@ -178,7 +178,7 @@ final class TasksWritesEffectsContractTest extends TestCase {
 		foreach (['tasks_edit_task' => ['summary' => 'Outro'], 'tasks_complete_task' => [], 'tasks_delete_task' => []] as $tool => $fields) {
 			$uid = $tool === 'tasks_delete_task' ? 'apagar-1' : 'editar';
 			$arguments = ['calendar' => self::TASKS, 'uid' => $uid] + $fields;
-			$plan = $this->gate->call($tool, $arguments)['body'];
+			$plan = $this->gate->call($tool, $arguments + ['confirm' => false])['body'];
 			$stale = $arguments + ['confirm' => true, 'etag' => $plan->result->structuredContent->etag];
 			// Another client changes the task after the plan.
 			$this->store->objects[1][$uid . '.ics']['etag'] = '"outra-versao-' . $tool . '"';

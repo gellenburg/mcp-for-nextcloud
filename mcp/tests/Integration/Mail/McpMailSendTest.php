@@ -107,14 +107,14 @@ final class McpMailSendTest extends IntegrationTestCase {
 		$sessions = count($this->sinkSessions());
 
 		self::markCell('ml8-send-start');
-		$plan = $this->call([self::TOOL, $arguments]);
+		$plan = $this->call([self::TOOL, $arguments + ['confirm' => false]]);
 		$this->assertTrue($plan['structuredContent']['requiresConfirmation']);
 		$this->assertSame('alice@example.com', $plan['structuredContent']['target']['from']);
 		$this->assertSame($sessions, count($this->sinkSessions()), 'a plan reaches no SMTP server');
 		$this->assertSame($outbox, $this->select('mail_local_messages', 'account_id', $own, 'id'), 'a plan writes nothing to the Outbox');
 		$this->assertSame($before, $imap->state(), 'a plan changes no folder');
 
-		$done = $this->decoded($this->confirm($plan, $arguments));
+		$done = $this->decoded($this->execute($arguments));
 		$this->assertSame(['sent', true, true], [$done['outcome'], $done['sent'], $done['copiedToSent']]);
 		$session = $this->newSinkSessions($sessions, 1)[0];
 		$this->assertSame('alice@example.com', $session['from']);
@@ -134,7 +134,7 @@ final class McpMailSendTest extends IntegrationTestCase {
 		$others = static fn (array $state): array => array_diff_key($state, ['Sent' => 0]);
 		$this->assertSame($others($before), $others($after), 'every other folder is untouched');
 
-		$this->decoded($this->confirm($plan, $arguments));
+		$this->decoded($this->execute($arguments));
 		$this->assertCount(2, $this->newSinkSessions($sessions, 2), 'confirming the same plan again sends again');
 		self::markCell('ml8-send-end');
 		$imap->close();
@@ -162,7 +162,7 @@ final class McpMailSendTest extends IntegrationTestCase {
 		foreach ($cases as $name => [$to, $outcome, $status, $data]) {
 			$arguments = ['account_id' => $own, 'to' => $to, 'subject' => "Case $name"];
 			$sessions = count($this->sinkSessions());
-			$done = $this->decoded($this->confirm($this->call([self::TOOL, $arguments]), $arguments));
+			$done = $this->decoded($this->execute($arguments));
 			$this->assertSame($outcome, $done['outcome'], $name);
 			$this->assertArrayNotHasKey('messageIdHeader', $done, $name);
 			$row = $this->select('mail_local_messages', 'id', (int)$done['outboxId'], 'id');
@@ -196,9 +196,9 @@ final class McpMailSendTest extends IntegrationTestCase {
 		$this->setSent($gone);
 		$arguments = ['account_id' => $own, 'to' => ['ok-after@example.com'], 'subject' => 'Accepted, then no copy'];
 		$sessions = count($this->sinkSessions());
-		$plan = $this->call([self::TOOL, $arguments]);
+		$plan = $this->call([self::TOOL, $arguments + ['confirm' => false]]);
 		$this->assertSame($gone, $plan['structuredContent']['target']['sentMailboxId']);
-		$done = $this->decoded($this->confirm($plan, $arguments));
+		$done = $this->decoded($this->execute($arguments));
 		$this->assertSame(['sentNotCopied', true, false], [$done['outcome'], $done['sent'], $done['copiedToSent']]);
 		$this->assertTrue($this->newSinkSessions($sessions, 1)[0]['answered'], 'the server accepted the message');
 		$this->assertSame(11, (int)$this->select('mail_local_messages', 'id', (int)$done['outboxId'], 'id')[0]['status'], 'stays in the Outbox, not copied');
@@ -218,7 +218,7 @@ final class McpMailSendTest extends IntegrationTestCase {
 		$foreign = $this->call([self::TOOL, ['account_id' => $this->account(MailActor::BOB), 'to' => ['ok@example.com']]]);
 		$this->assertSame(['content' => [['type' => 'text', 'text' => MailMessages::accountNotFound()]], 'isError' => true], $foreign);
 		$arguments = ['account_id' => $own, 'to' => ['ok@example.com'], 'subject' => 'Planned'];
-		$plan = $this->call([self::TOOL, $arguments]);
+		$plan = $this->call([self::TOOL, $arguments + ['confirm' => false]]);
 		$changed = $this->call([self::TOOL, ['subject' => 'Changed'] + $arguments + ['confirm' => true, PlanState::ARGUMENT => $plan['structuredContent'][PlanState::ARGUMENT]]]);
 		$this->assertSame(MailSendMessages::planChanged(), $changed['structuredContent']['warnings'][0]['message']);
 		usleep(300_000);
@@ -251,14 +251,13 @@ final class McpMailSendTest extends IntegrationTestCase {
 	}
 
 	/**
-	 * The confirmed call of a plan.
+	 * Execute an authorized write directly.
 	 *
-	 * @param array<string, mixed> $plan the MCP result of the plan
 	 * @param array<string, mixed> $arguments the arguments of the plan
-	 * @return array<string, mixed> the MCP result of the confirmed call
+	 * @return array<string, mixed> the MCP result of the direct call
 	 */
-	private function confirm(array $plan, array $arguments): array {
-		$result = $this->call([self::TOOL, $arguments + ['confirm' => true, PlanState::ARGUMENT => $plan['structuredContent'][PlanState::ARGUMENT]]]);
+	private function execute(array $arguments): array {
+		$result = $this->call([self::TOOL, $arguments]);
 		$this->assertArrayNotHasKey('isError', $result, json_encode($result, JSON_THROW_ON_ERROR));
 		return $result;
 	}

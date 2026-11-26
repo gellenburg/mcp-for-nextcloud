@@ -43,7 +43,7 @@ final class PollsCreateRegistryTest extends TestCase {
 		if(!$visible){$this->expectException(\InvalidArgumentException::class);$registry->call('polls_create_poll',['type'=>'textPoll','title'=>'x'],'alice');return;}
 		self::assertSame('polls_create_poll',$tools[0]['name']);self::assertFalse($tools[0]['annotations']['readOnlyHint']);
 		self::assertArrayHasKey('confirm',$tools[0]['inputSchema']['properties']);
-		$args=['type'=>'textPoll','title'=>'Registry'];$plan=$registry->call('polls_create_poll',$args,'alice');
+		$args=['type'=>'textPoll','title'=>'Registry'];$plan=$registry->call('polls_create_poll',$args+['confirm'=>false],'alice');
 		self::assertTrue($plan['structuredContent']['requiresConfirmation']);self::assertSame([],NativeCreateScene::$effects);
 		$out=$registry->call('polls_create_poll',$args+['confirm'=>true,'plan_state'=>$plan['structuredContent']['plan_state']],'alice');
 		self::assertSame('created',json_decode($out['content'][0]['text'],true)['status']);

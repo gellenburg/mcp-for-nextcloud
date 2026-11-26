@@ -41,18 +41,24 @@ final class FilesCommentingEffectsContractTest extends TestCase {
 
 	/** @return void a comment mentioning bob on alice's file; the plan changes when the file becomes a share */
 	public function testAddingAComment(): void {
+		$markerLiterals = [];
 		$flow = (new CriticalFlow('add-comment', 'files_add_comment', 'files', 'comments',
 			['path' => '/f42.txt', 'text' => 'Approved, @bob'],
-			fn (): array => ['saves' => $this->world->saves, 'markers' => $this->world->markerWrites, 'notified' => $this->world->notified]))
+			function () use (&$markerLiterals): array {
+				// Capture every observed native clock value, not just the final write's marker.
+				if ($this->world->markerWrites !== [] && isset($this->world->markers[CommentWorld::OWN])) {
+					$marker = (new \DateTime($this->world->markers[CommentWorld::OWN]))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
+					$markerLiterals[$marker] = '<read-marker-now>';
+				}
+				return ['saves' => $this->world->saves, 'markers' => $this->world->markerWrites, 'notified' => $this->world->notified];
+			}))
 			// The file becomes bob's share between the plan and the confirmation: the audience changed, nothing is written.
 			->changing(function (): void { $this->world->shared[] = CommentWorld::OWN; })
 			// From then on the file is shared, so every confirmation also confirms the shared write, as the user would.
 			->confirmingWith(static fn (mixed $plan, array $arguments): array => $arguments + ['confirm' => true, 'confirm_shared' => true,
 				'plan_state' => (string)($plan->result->structuredContent->plan_state ?? '')])
 			// The native POST moves the author's marker to the real clock (EntityCollection::setReadMarker(null)).
-			->normalizing(fn (): array => isset($this->world->markers[CommentWorld::OWN]) && $this->world->markerWrites !== []
-				? [(new \DateTime($this->world->markers[CommentWorld::OWN]))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z') => '<read-marker-now>']
-				: [])
+			->normalizing(function () use (&$markerLiterals): array { return $markerLiterals; })
 			->hiding(function (): void { $this->world->hidden[] = CommentWorld::OWN; }, function (): void { $this->world->hidden = [CommentWorld::HIDDEN]; });
 		(new FlowRunner($this, $this->gate, 'files'))->run($flow);
 		self::assertSame('Approved, @bob', $this->world->saves[0][2] ?? null);

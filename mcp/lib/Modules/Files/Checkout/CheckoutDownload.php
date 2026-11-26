@@ -36,7 +36,8 @@ final class CheckoutDownload {
 	 * @return Response the raw bytes, or a refusal without a body
 	 */
 	public function send(?CheckoutToken $found): Response {
-		$opened = $this->resolver->resolve($found, CheckoutToken::KIND_DOWNLOAD);
+		$kind = $found?->kind === CheckoutToken::KIND_READ ? CheckoutToken::KIND_READ : CheckoutToken::KIND_DOWNLOAD;
+		$opened = $this->resolver->resolve($found, $kind);
 		if ($opened instanceof Response) {
 			return $opened;
 		}

@@ -87,7 +87,7 @@ final class RoutinesEffectsContractTest extends TestCase {
 	public function testARevokedEventStepRefusesTheMeetingBeforeTheRoom(): void {
 		$arguments = ['title' => 'Kickoff', 'participants' => ['pedro'], 'agenda' => 'Scope',
 			'calendar' => '/remote.php/dav/calendars/alice/personal/', 'start' => '2026-03-11T09:00:00-03:00', 'end' => '2026-03-11T10:00:00-03:00'];
-		$plan = $this->gate->call('routines_create_meeting', $arguments);
+		$plan = $this->gate->call('routines_create_meeting', $arguments + ['confirm' => false]);
 		$this->assertTrue($plan['body']->result->structuredContent->requiresConfirmation ?? false, json_encode($plan['body']));
 
 		$this->gate->grant('calendar', 'create', false);

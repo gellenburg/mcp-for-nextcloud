@@ -207,7 +207,7 @@ final class NotificationsDismissalTest extends TestCase {
 
 	/** @param string $major source pin @return void the registry plans without confirm and only then runs the native delete */
 	#[DataProvider('pins')]
-	public function testRegistryRequiresConfirmBeforeTheNativeDelete(string $major): void {
+	public function testRegistryDryRunThenDirectNativeDelete(string $major): void {
 		$world = $this->open($major, $this->row(8));
 		$tool = new DismissNotification($world->effect, $world->preview);
 		$modules = $this->createMock(ContainerInterface::class);
@@ -225,7 +225,7 @@ final class NotificationsDismissalTest extends TestCase {
 			null,
 			new CapabilityRegistry([new NotificationsDiscoveryProbe(true)], new NullLogger()),
 		);
-		$plan = $registry->call('notifications_dismiss', ['id' => 8], 'alice');
+		$plan = $registry->call('notifications_dismiss', ['id' => 8, 'confirm' => false], 'alice');
 		self::assertTrue($plan['structuredContent']['requiresConfirmation']);
 		self::assertNull(json_decode($plan['content'][0]['text'], true));
 		self::assertSame(0, $world->script->deletes);
@@ -234,7 +234,7 @@ final class NotificationsDismissalTest extends TestCase {
 		$again = $registry->call('notifications_dismiss', ['id' => 8, 'confirm' => false], 'alice');
 		self::assertTrue($again['structuredContent']['requiresConfirmation']);
 		self::assertSame(0, $world->script->deletes);
-		$done = $registry->call('notifications_dismiss', ['id' => 8, 'confirm' => true], 'alice');
+		$done = $registry->call('notifications_dismiss', ['id' => 8], 'alice');
 		$receipt = json_decode($done['content'][0]['text'], true, 512, JSON_THROW_ON_ERROR);
 		self::assertSame('dismissed', $receipt['outcome']);
 		self::assertSame(1, $world->script->deletes);

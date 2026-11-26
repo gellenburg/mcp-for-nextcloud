@@ -25,8 +25,8 @@ final class ReadFile implements Tool {
 	public static function definition(): ToolDefinition {
 		$path = ['type' => 'string', 'minLength' => 1, 'description' => FilesMessages::path()];
 		return FilesSchema::definition(['name' => 'files_read', 'module' => 'files', 'operation' => 'read',
-				'description' => \OCA\Mcp\Modules\Files\Presentation\ReadingMessages::readTool(),
-				'inputSchema' => FilesSchema::schema(['path' => $path], ['path'])]);
+				'description' => \OCA\Mcp\Modules\Files\Presentation\ReadingMessages::readTool() . ' For original file bytes use mode=download (single-use read-only link); for embedded PNG/JPEG descriptions and keywords use mode=metadata.',
+				'inputSchema' => FilesSchema::schema(['path' => $path, 'mode' => ['type' => 'string', 'enum' => ['text', 'download', 'metadata'], 'description' => 'Default text; download returns a read-only link to original bytes; metadata extracts embedded PNG/JPEG fields.']], ['path'])]);
 	}
 
 	/**

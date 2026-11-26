@@ -4,7 +4,8 @@
             "step": "locked-preview",
             "request": {
                 "id": 102,
-                "etag": "<etag#1>"
+                "etag": "<etag#1>",
+                "confirm": false
             },
             "response": {
                 "status": 200,

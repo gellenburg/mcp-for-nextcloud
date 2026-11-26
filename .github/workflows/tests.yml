@@ -8,7 +8,7 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev/direct-execution]
   pull_request:
   workflow_dispatch:
 

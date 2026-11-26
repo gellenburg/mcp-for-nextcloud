@@ -86,7 +86,7 @@ final class CatalogModuleTest extends TestCase {
 	public function testGrantAnyOfIsRespected(): void {
 		$this->policy->setGrant('alice', 'files', 'link', true);
 		self::assertContains('probe_share', $this->names());
-		$plan = $this->registry()->call('probe_share', [], 'alice')['structuredContent'];
+		$plan = $this->registry()->call('probe_share', ['confirm' => false], 'alice')['structuredContent'];
 		self::assertSame(['requiresConfirmation' => true, 'tool' => 'probe_share'], array_slice($plan, 0, 2));
 		self::assertSame('alice', $plan['user']);
 		self::assertSame(['probe_share'], BuiltTools::$names);

@@ -317,7 +317,7 @@ final class DeckPreviewTest extends TestCase {
 
 	/** @return array<string, array{mixed}> */
 	public static function unconfirmedProvider(): array {
-		return ['absent' => [null], 'false' => [false]];
+		return ['false' => [false]];
 	}
 
 	/**
@@ -326,7 +326,7 @@ final class DeckPreviewTest extends TestCase {
 	 * @param bool|null $confirm null leaves the argument out.
 	 */
 	#[DataProvider('unconfirmedProvider')]
-	public function testRegistryAnswersWithThePlanUnlessConfirmed(mixed $confirm): void {
+	public function testExplicitDryRunReturnsPlan(mixed $confirm): void {
 		$arguments = ['cardId' => 7, 'stackId' => 20];
 		if ($confirm !== null) {
 			$arguments['confirm'] = $confirm;
@@ -347,14 +347,14 @@ final class DeckPreviewTest extends TestCase {
 		$this->registry($this->readOnlyGateway())->call('deck_move_card', ['cardId' => 7, 'stackId' => 20, 'confirm' => null], 'alice');
 	}
 
-	public function testRegistryRunsTheWriteOnceConfirmed(): void {
+	public function testRegistryRunsTheWriteDirectlyOnce(): void {
 		$gateway = $this->createMock(DeckGatewayInterface::class);
 		$gateway->method('cardOwnership')->willReturn($this->ownershipOf('alice'));
 		$gateway->method('stackOwnership')->willReturn($this->ownershipOf('alice'));
 		$gateway->method('cardBoardId')->willReturn(1);
 		$gateway->expects(self::once())->method('moveCard')->with('alice', 7, 20, null)->willReturn($this->card(['id' => 7, 'stackId' => 20]));
 
-		$result = $this->registry($gateway)->call('deck_move_card', ['cardId' => 7, 'stackId' => 20, 'confirm' => true], 'alice');
+		$result = $this->registry($gateway)->call('deck_move_card', ['cardId' => 7, 'stackId' => 20], 'alice');
 
 		self::assertNotTrue($result['isError'] ?? false);
 		$structured = $result['structuredContent'] ?? $this->payload($result);

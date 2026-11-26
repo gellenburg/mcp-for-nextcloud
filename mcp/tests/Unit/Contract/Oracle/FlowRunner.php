@@ -13,7 +13,7 @@ use PHPUnit\Framework\TestCase;
  * Runs the steps every critical write flow is frozen by, in a fixed order, and writes their transcript (request,
  * endpoint answer, observed effect) to `effects/<module>.<flow>.json`:
  *
- * 1. `preview` — the call without confirm answers the plan and changes nothing;
+ * 1. `preview` — an explicit dry run answers the plan and changes nothing;
  * 2. `confirm-not-boolean` / `confirm-false` — only the boolean true confirms; anything else writes nothing;
  * 3. `plan-changed` — the world changes after the plan; the old confirmation writes nothing and answers the new plan;
  * 4. `confirmed` — a fresh plan confirmed with confirm: true (and its plan_state) has the effect;
@@ -51,7 +51,7 @@ final class FlowRunner {
 	public function run(CriticalFlow $flow): void {
 		$this->steps = [];
 		$initial = ($flow->state)();
-		$plan = $this->step('preview', $flow, $flow->arguments(), $initial);
+		$plan = $this->step('preview', $flow, $flow->arguments() + ['confirm' => false], $initial);
 		$this->step('confirm-not-boolean', $flow, $flow->arguments() + ['confirm' => 'true'], $initial);
 		$this->step('confirm-false', $flow, $flow->arguments() + ['confirm' => false], $initial);
 		if ($flow->changePlan !== null) {
@@ -64,7 +64,7 @@ final class FlowRunner {
 			$this->skip('plan-changed', $flow->changeSkipped);
 		}
 		$before = ($flow->state)();
-		$fresh = $this->step('preview-before-confirm', $flow, $flow->arguments(), $before);
+		$fresh = $this->step('preview-before-confirm', $flow, $flow->arguments() + ['confirm' => false], $before);
 		$confirmed = $flow->confirmed($fresh['body']);
 		$executed = $this->step('confirmed', $flow, $confirmed, null);
 		$this->test->assertFalse(isset($executed['body']->error) || ($executed['body']->result->isError ?? false),
@@ -90,7 +90,25 @@ final class FlowRunner {
 		}
 		GoldenFile::assertMatches($this->test, self::DIR . $this->file . '.' . $flow->name . '.json',
 			VolatileFields::normalize(['tool' => $flow->tool, 'grant' => $flow->module . '.' . $flow->operation, 'steps' => $this->steps],
-				$flow->literals()));
+				$flow->literals()), self::withExplicitDryRuns(...));
+	}
+
+	/**
+	 * The upstream transcripts record an omitted confirmation as a preview. The fork uses an
+	 * explicit false instead. Adapt only those recorded request arguments, retaining every
+	 * original response, state and refusal assertion byte-for-byte in the comparison.
+	 * New transcripts already include the explicit flag.
+	 */
+	private static function withExplicitDryRuns(string $expected): string {
+		$record = json_decode($expected, false, 512, JSON_THROW_ON_ERROR);
+		foreach ($record->steps as $step) {
+			if (in_array($step->step, ['preview', 'preview-before-confirm', 'guest'], true)
+				&& isset($step->arguments) && is_object($step->arguments)
+				&& !property_exists($step->arguments, 'confirm')) {
+				$step->arguments->confirm = false;
+			}
+		}
+		return GoldenFile::encode($record);
 	}
 
 	/**
@@ -105,7 +123,7 @@ final class FlowRunner {
 		$current = $this->confirmable($flow);
 		$this->gate->guest(self::GUEST_APPS);
 		try {
-			$plan = $this->step('guest', $flow, $flow->arguments(), $after);
+			$plan = $this->step('guest', $flow, $flow->arguments() + ['confirm' => false], $after);
 			$write = $this->step('guest-confirmed', $flow, $current, $allowed ? null : $after);
 		} finally {
 			$this->gate->guest(null);
@@ -146,7 +164,7 @@ final class FlowRunner {
 	 * @return array<string, mixed> arguments of a confirmation valid at this moment
 	 */
 	private function confirmable(CriticalFlow $flow): array {
-		$plan = $this->gate->call($flow->tool, $flow->arguments())['body'];
+		$plan = $this->gate->call($flow->tool, $flow->arguments() + ['confirm' => false])['body'];
 		// A refusal asked with arguments that no longer plan anything (a consumed target) would prove nothing.
 		$this->test->assertTrue($plan->result->structuredContent->requiresConfirmation ?? false,
 			$flow->tool . ': the arguments of a refusal step must still plan a write: ' . json_encode($plan) . json_encode($this->gate->logged()));

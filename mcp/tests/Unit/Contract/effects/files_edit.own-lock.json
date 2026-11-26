@@ -5,7 +5,8 @@
             "request": {
                 "path": "/Docs/old.md",
                 "content": "new",
-                "etag": "<etag#1>"
+                "etag": "<etag#1>",
+                "confirm": false
             },
             "response": {
                 "status": 200,

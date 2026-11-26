@@ -108,11 +108,11 @@ final class FilesDeleteEffectsContractTest extends TestCase {
 		$this->tree->addFile(TrashHomeTree::ROOT . '/a.txt', 'a');
 		$this->tree->addFile(TrashHomeTree::ROOT . '/sem-lixeira/b.txt', 'b', false);
 		$this->serve(true);
-		$plan = $this->gate->call('files_delete', ['path' => '/a.txt'])['body'];
+		$plan = $this->gate->call('files_delete', ['path' => '/a.txt', 'confirm' => false])['body'];
 		$this->tree->touch(TrashHomeTree::ROOT . '/a.txt');
 		$stale = $this->gate->call('files_delete', $this->echoing($plan, ['path' => '/a.txt']))['body'];
 		self::assertTrue($stale->result->isError ?? false, json_encode($stale));
-		$noTrashPlan = $this->gate->call('files_delete', ['path' => '/sem-lixeira/b.txt'])['body'];
+		$noTrashPlan = $this->gate->call('files_delete', ['path' => '/sem-lixeira/b.txt', 'confirm' => false])['body'];
 		$forged = ['path' => '/sem-lixeira/b.txt', 'confirm' => true, 'id' => $this->idOf('/sem-lixeira/b.txt'), 'etag' => 'e' . $this->idOf('/sem-lixeira/b.txt')];
 		$noTrash = $this->gate->call('files_delete', $forged)['body'];
 		foreach ([$noTrashPlan, $noTrash] as $answer) {
@@ -180,7 +180,7 @@ final class FilesDeleteEffectsContractTest extends TestCase {
 	 * @return mixed the JSON-RPC body of a plan confirmed at once
 	 */
 	private function confirm(string $path): mixed {
-		$plan = $this->gate->call('files_delete', ['path' => $path])['body'];
+		$plan = $this->gate->call('files_delete', ['path' => $path, 'confirm' => false])['body'];
 		return $this->gate->call('files_delete', $this->echoing($plan, ['path' => $path]))['body'];
 	}
 

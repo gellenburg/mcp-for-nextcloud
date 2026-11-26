@@ -23,9 +23,34 @@ final class McpClient {
 	}
 
 	/**
+	 * Historical integration fixture: a write requested for inspection is now an explicit dry run.
+	 * Read requests and explicitly specified flags are unchanged. The frozen discovery inventory is
+	 * independent of the running server's grants. Direct-execution tests must use rawTool().
 	 * @param array<string, mixed> $arguments
 	 */
 	public function tool(string $name, array $arguments = []): ToolReply {
+		if (!array_key_exists('confirm', $arguments) && self::isHistoricalWrite($name)) {
+			$arguments['confirm'] = false;
+		}
+		return $this->rawTool($name, $arguments);
+	}
+
+	/** @return bool Whether the upstream fixture declares this tool a write. */
+	private static function isHistoricalWrite(string $name): bool {
+		static $writes = null;
+		if ($writes === null) {
+			$fixture = json_decode((string)file_get_contents(__DIR__ . '/../../Unit/Contract/golden/discovery.all-on.json'), true, 512, JSON_THROW_ON_ERROR);
+			$writes = array_column(array_filter($fixture['tools/list']['body']['result']['tools'],
+				static fn (array $tool): bool => !$tool['annotations']['readOnlyHint']), 'name');
+		}
+		return in_array($name, $writes, true);
+	}
+
+	/**
+	 * Actual wire behavior: send the arguments exactly as supplied, including an omitted confirm.
+	 * @param array<string, mixed> $arguments
+	 */
+	public function rawTool(string $name, array $arguments = []): ToolReply {
 		$message = ['jsonrpc' => '2.0', 'id' => ++$this->id, 'method' => 'tools/call',
 			'params' => ['name' => $name, 'arguments' => (object)$arguments]];
 		$response = Http::request('POST', Http::BASE . '/index.php/apps/mcp/', [

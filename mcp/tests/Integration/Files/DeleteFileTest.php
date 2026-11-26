@@ -74,6 +74,38 @@ final class DeleteFileTest extends ExclusionTestCase {
 		}
 	}
 
+	/** Direct deletion still requires a current grant, validates the requested revision and uses native trash. */
+	public function testDirectDeletionPreservesAuthorizationAndNativeTrash(): void {
+		foreach (['basic', 'bearer'] as $kind) {
+			$client = new McpClient($kind === 'bearer' ? LoginFactory::bearer(self::ALICE) : LoginFactory::basic(self::ALICE));
+			$name = 'direct-' . $kind . '.txt';
+			$file = $this->makeFile('home', $name, 'direct exact bytes');
+			$path = $this->path('home', $name);
+			$preview = $client->rawTool('files_delete', ['path' => $path, 'confirm' => false]);
+			self::assertTrue($preview->ok(), $preview->describe());
+			self::assertTrue($preview->structured()['requiresConfirmation']);
+			self::assertSame('direct exact bytes', $file->getContent());
+			$stale = $client->rawTool('files_delete', ['path' => $path, 'etag' => 'outdated']);
+			self::assertFalse($stale->ok(), $stale->describe());
+			self::assertSame('direct exact bytes', $file->getContent());
+			$policy = Server::get(GrantPolicy::class);
+			$policy->setGrant(self::ALICE, 'files', 'delete', false);
+			try {
+				$denied = $client->rawTool('files_delete', ['path' => $path]);
+				self::assertFalse($denied->ok(), $denied->describe());
+				self::assertSame('direct exact bytes', $file->getContent());
+			} finally {
+				$policy->setGrant(self::ALICE, 'files', 'delete', true);
+			}
+			$done = $client->rawTool('files_delete', ['path' => $path]);
+			self::assertTrue($done->ok(), $done->describe());
+			DeleteReceiptAssertions::observedInOwnTrash($done->json());
+			self::assertFalse($this->exists(self::ALICE, $path));
+			$this->restore($name, $path);
+			self::assertSame('direct exact bytes', $this->node(self::ALICE, $path)->getContent());
+		}
+	}
+
 	/** @return void An old grant set without delete and an ungranted actor cause no effect; direct confirm is also gated. */
 	public function testDefaultDeniedAndDifferentActorPreserveBytes(): void {
 		$file = $this->makeFile('home', 'denied.txt', 'unchanged');

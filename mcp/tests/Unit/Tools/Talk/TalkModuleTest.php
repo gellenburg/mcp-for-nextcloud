@@ -512,7 +512,7 @@ class TalkModuleTest extends TestCase {
 	 * The whole confirmation contract in one place: no confirm and an explicit false both stop at the plan,
 	 * confirm: true publishes, and nothing the caller can pass takes the place of an approval id.
 	 */
-	public function testTheConfirmationIsOnlyTheConfirmBooleanAndNothingIsKept(): void {
+	public function testExplicitDryRunsNeverReachTalkWrites(): void {
 		$writes = [
 			[TalkModule::TOOL_REPLY, ['conversation_token' => 'abcd', 'message' => 'oi']],
 			[TalkModule::TOOL_ATTACH, ['conversation_token' => 'abcd', 'path' => 'relatorio.pdf']],
@@ -533,14 +533,14 @@ class TalkModuleTest extends TestCase {
 			$this->preview->method('batch')->willReturn(['requiresConfirmation' => true, 'action' => 'talk_send_batch']);
 			$this->preview->method('group')->willReturn(['requiresConfirmation' => true, 'action' => 'talk_create_group']);
 
-			// Nothing in Talk is reached, whichever way the caller leaves confirm.
+			// Explicit dry runs must never reach the Talk write sinks.
 			$this->writer->expects($this->never())->method('reply');
 			$this->writer->expects($this->never())->method('replyMany');
 			$this->writer->expects($this->never())->method('quoteAttachment');
 			$this->sharer->expects($this->never())->method('attach');
 			$this->groups->expects($this->never())->method('create');
 
-			foreach ([[], ['confirm' => false]] as $confirm) {
+			foreach ([['confirm' => false]] as $confirm) {
 				$result = $this->registry()->call($name, $arguments + $confirm, 'alice');
 				// A plan is an answer, not a failure: the agent has to be able to show it and ask.
 				$this->assertArrayNotHasKey('isError', $result, $name);

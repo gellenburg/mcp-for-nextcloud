@@ -264,7 +264,7 @@
                     },
                     "confirm": {
                         "type": "boolean",
-                        "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                        "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                     }
                 }
             },

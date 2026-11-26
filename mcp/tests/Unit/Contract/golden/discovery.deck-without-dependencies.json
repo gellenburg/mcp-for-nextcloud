@@ -167,11 +167,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -210,11 +210,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -254,11 +254,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -318,11 +318,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -352,7 +352,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -371,7 +371,7 @@
                     {
                         "name": "files_read",
                         "title": "Read file",
-                        "description": "Read the text of a file from Nextcloud (plain text/markdown directly; PDF/DOCX/ODT via text extraction).",
+                        "description": "Read the text of a file from Nextcloud (plain text/markdown directly; PDF/DOCX/ODT via text extraction). For original file bytes use mode=download (single-use read-only link); for embedded PNG/JPEG descriptions and keywords use mode=metadata.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -379,6 +379,15 @@
                                     "type": "string",
                                     "minLength": 1,
                                     "description": "Path of the file or folder, e.g. /Documents/report.pdf"
+                                },
+                                "mode": {
+                                    "type": "string",
+                                    "enum": [
+                                        "text",
+                                        "download",
+                                        "metadata"
+                                    ],
+                                    "description": "Default text; download returns a read-only link to original bytes; metadata extracts embedded PNG/JPEG fields."
                                 }
                             },
                             "additionalProperties": false,
@@ -416,11 +425,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -465,11 +474,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -505,11 +514,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -608,11 +617,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -834,7 +843,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -882,7 +891,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false
@@ -914,11 +923,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -952,11 +961,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -986,7 +995,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Explicitly confirm the shared impact described in the preview. Other people may lose access; native recovery is not guaranteed."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "etag": {
                                     "type": "string"
@@ -997,7 +1006,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -1107,7 +1116,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -1117,7 +1126,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1154,7 +1163,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the file is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -1164,7 +1173,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1287,11 +1296,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the note is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1356,11 +1365,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the note is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1398,11 +1407,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the note is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1437,11 +1446,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Required only when the note is outside your personal folder (shared, team folder, or external storage). Send only after confirming with the user."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1610,11 +1619,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "set to true only after the user confirms changing a calendar that belongs to someone else"
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1744,11 +1753,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "set to true only after the user confirms changing a calendar that belongs to someone else"
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1798,11 +1807,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "set to true only after the user confirms changing a calendar that belongs to someone else"
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1852,11 +1861,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "set to true only after the user confirms changing a calendar that belongs to someone else"
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -1906,11 +1915,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "set to true only after the user confirms changing a calendar that belongs to someone else"
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -2259,11 +2268,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Acknowledge changing a collection owned by another person after showing the shared notice."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -2359,11 +2368,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Acknowledge changing a collection owned by another person after showing the shared notice."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -2407,11 +2416,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Acknowledge changing a collection owned by another person after showing the shared notice."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -2618,11 +2627,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Acknowledge changing a collection owned by another person after showing the shared notice."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -2732,11 +2741,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Acknowledge changing a collection owned by another person after showing the shared notice."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -2780,11 +2789,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Acknowledge changing a collection owned by another person after showing the shared notice."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -2828,11 +2837,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Acknowledge changing a collection owned by another person after showing the shared notice."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -2971,7 +2980,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -2981,7 +2990,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3022,7 +3031,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user confirms linking a shared file or changing another user's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -3032,7 +3041,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -3075,7 +3084,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -3085,7 +3094,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3250,11 +3259,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3327,11 +3336,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3370,11 +3379,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3404,11 +3413,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3557,7 +3566,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3598,11 +3607,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3632,11 +3641,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3665,7 +3674,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3704,7 +3713,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -3714,7 +3723,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3754,7 +3763,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -3764,7 +3773,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3812,11 +3821,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3858,7 +3867,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -3868,7 +3877,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -3897,7 +3906,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true only after the user has confirmed the change on somebody else's board."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -3907,7 +3916,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -4029,7 +4038,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4070,7 +4079,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4110,7 +4119,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4146,7 +4155,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4200,7 +4209,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4240,7 +4249,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4800,7 +4809,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4841,7 +4850,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4923,7 +4932,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -4999,7 +5008,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -5265,7 +5274,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true, after the user agreed, to write in a table owned by somebody else; the change is seen by everybody the table is shared with."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5275,7 +5284,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5329,7 +5338,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "description": "Set to true, after the user agreed, to write in a table owned by somebody else; the change is seen by everybody the table is shared with."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5339,7 +5348,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5377,7 +5386,8 @@
                                     "maxLength": 32
                                 },
                                 "confirm_shared": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5387,7 +5397,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5438,7 +5448,8 @@
                                     "additionalProperties": false
                                 },
                                 "confirm_shared": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5448,7 +5459,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5530,7 +5541,8 @@
                                     "description": "Unique managed view IDs in this table to include the new column in."
                                 },
                                 "confirm_shared": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5540,7 +5552,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5599,7 +5611,8 @@
                                     "additionalProperties": false
                                 },
                                 "confirm_shared": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5609,7 +5622,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5648,7 +5661,8 @@
                                     "maxLength": 32
                                 },
                                 "confirm_shared": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5658,7 +5672,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5751,7 +5765,8 @@
                                     "additionalProperties": false
                                 },
                                 "confirm_shared": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5761,7 +5776,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5848,7 +5863,8 @@
                                     "additionalProperties": false
                                 },
                                 "confirm_shared": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5858,7 +5874,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -5900,7 +5916,8 @@
                                     "minimum": 1
                                 },
                                 "confirm_shared": {
-                                    "type": "boolean"
+                                    "type": "boolean",
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -5910,7 +5927,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -6188,7 +6205,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -6418,8 +6435,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -6429,7 +6445,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -6475,8 +6491,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -6490,7 +6505,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -6562,8 +6577,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -6573,7 +6587,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -6613,8 +6627,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -6624,7 +6637,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -6678,8 +6691,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -6689,7 +6701,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -6742,8 +6754,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -6753,7 +6764,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -6787,8 +6798,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -6798,7 +6808,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -6837,8 +6847,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -6848,7 +6857,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -7034,8 +7043,7 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Explicitly confirm the shared impact and native 15-minute editing lock shown in this plan."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "plan_state": {
                                     "type": "string",
@@ -7045,7 +7053,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -7291,7 +7299,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -7412,7 +7420,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7457,7 +7465,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7516,7 +7524,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7579,7 +7587,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7626,7 +7634,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7666,7 +7674,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7706,7 +7714,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7786,7 +7794,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7843,7 +7851,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -7884,7 +7892,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -8094,7 +8102,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -8165,7 +8173,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -8224,7 +8232,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -8268,7 +8276,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -8357,7 +8365,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -8410,7 +8418,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -8454,7 +8462,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "additionalProperties": false,
@@ -8563,7 +8571,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -8640,7 +8648,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [
@@ -8699,7 +8707,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -8743,7 +8751,7 @@
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             }
                         },
@@ -8824,12 +8832,11 @@
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
-                                    "default": false,
-                                    "description": "Must be true when calendar belongs to somebody else."
+                                    "description": "Optional shared-resource opt-out: false excludes shared effects; omission uses existing grants and native permissions."
                                 },
                                 "confirm": {
                                     "type": "boolean",
-                                    "description": "Send true only after you have shown the plan of this call to the user and the user explicitly said yes. Without it nothing is changed and the answer is the plan."
+                                    "description": "Optional dry run: false returns a preview. Omit to execute under configured grants and native permissions."
                                 }
                             },
                             "required": [

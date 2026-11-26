@@ -96,6 +96,52 @@ final class ToolRegistryTest extends TestCase {
 		return new ToolRegistry([$module], $this->policy, $apps, $users, $this->logger, $guests);
 	}
 
+	/** Direct checkout prepares revisions and signed state, including authorized shared resources. */
+	public function testDirectCheckoutUsesInternalPreview(): void {
+		$module = new class implements ToolModule, \OCA\Mcp\Mcp\Tools\PreviewsWrites {
+			public array $calls = [];
+			public bool $shared = false;
+			public bool $conflict = false;
+			public function definitions(): array {
+				return [['name' => 'files_checkout', 'description' => 'Checkout', 'module' => 'files', 'operation' => 'edit',
+					'inputSchema' => ['type' => 'object', 'properties' => ['path' => ['type' => 'string'], 'etag' => ['type' => 'string'], 'confirm_shared' => ['type' => 'boolean', 'default' => false], 'plan_state' => ['type' => 'string']], 'required' => ['path']]]];
+			}
+			public function preview(string $name, array $arguments, string $userId): array {
+				return ['etag' => 'revision-1', 'plan_state' => 'signed-state', 'requiresSharedConfirmation' => $this->shared, 'shared' => $this->shared ? [['path' => '/test.png']] : []];
+			}
+			public function call(string $name, array $arguments, string $userId): array {
+				$this->calls[] = $arguments;
+				if ($this->conflict) {
+					throw new \OCA\Mcp\Mcp\Confirmation\PlanChanged(['plan_state' => 'changed']);
+				}
+				return ToolResult::json(['executed' => true]);
+			}
+		};
+		$this->policy->setGrant('alice', 'files', 'edit', true);
+		$registry = new ToolRegistry([$module], $this->policy, $this->createMock(IAppManager::class), $this->createMock(IUserManager::class), $this->logger);
+		$result = $registry->call('files_checkout', ['path' => '/test.png'], 'alice');
+		self::assertArrayNotHasKey('isError', $result);
+		self::assertSame([['path' => '/test.png', 'etag' => 'revision-1', 'confirm_shared' => true, 'plan_state' => 'signed-state', 'confirm' => true]], $module->calls);
+		$result = $registry->call('files_checkout', ['path' => '/test.png', 'confirm' => false], 'alice');
+		self::assertTrue($result['structuredContent']['requiresConfirmation']);
+		$module->shared = true;
+		$result = $registry->call('files_checkout', ['path' => '/test.png'], 'alice');
+		self::assertArrayNotHasKey('isError', $result);
+		self::assertCount(2, $module->calls);
+		self::assertTrue($module->calls[1]['confirm_shared']);
+		$registry->call('files_checkout', ['path' => '/test.png', 'etag' => 'caller-revision', 'confirm_shared' => false], 'alice');
+		self::assertSame('caller-revision', $module->calls[2]['etag']);
+		self::assertFalse($module->calls[2]['confirm_shared']);
+		$module->conflict = true;
+		$result = $registry->call('files_checkout', ['path' => '/test.png'], 'alice');
+		self::assertTrue($result['isError']);
+		self::assertFalse($result['structuredContent']['requiresConfirmation']);
+		self::assertCount(4, $module->calls, 'conflicts must not retry the mutation');
+		$this->policy->setGrant('alice', 'files', 'edit', false);
+		$this->expectException(\OCA\Mcp\Mcp\Tools\UnknownToolException::class);
+		$registry->call('files_checkout', ['path' => '/test.png'], 'alice');
+	}
+
 	/** Every registered write gets the same readable envelope, regardless of module preview support. */
 	public function testEveryRegisteredWriteReturnsMarkdownAndStructuredConfirmation(): void {
 		$this->assertEveryWriteEnvelope(false);
@@ -198,7 +244,7 @@ final class ToolRegistryTest extends TestCase {
 			public function renderPlan(string $tool, array $plan): ?string { return 'Custom body'; }
 		};
 		$this->policy->setGrant('alice', 'files', 'edit', true);
-		$result = (new ToolRegistry([$module], $this->policy, $this->createMock(IAppManager::class), $this->createMock(IUserManager::class), $this->logger))->call('fake_edit', [], 'alice');
+		$result = (new ToolRegistry([$module], $this->policy, $this->createMock(IAppManager::class), $this->createMock(IUserManager::class), $this->logger))->call('fake_edit', ['confirm' => false], 'alice');
 		self::assertSame(['requiresConfirmation' => true, 'tool' => 'fake_edit', 'title' => 'Edit'] + $plan, $result['structuredContent']);
 		self::assertStringContainsString('Custom body', $result['content'][0]['text']);
 		self::assertStringContainsString('*Review this.*', $result['content'][0]['text']);

@@ -4,7 +4,8 @@
             "step": "locked-preview",
             "request": {
                 "from": "/Docs/old.md",
-                "to": "/Docs/new.md"
+                "to": "/Docs/new.md",
+                "confirm": false
             },
             "response": {
                 "status": 200,

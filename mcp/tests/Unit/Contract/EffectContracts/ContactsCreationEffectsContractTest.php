@@ -73,8 +73,8 @@ final class ContactsCreationEffectsContractTest extends TestCase {
 		$args = ['addressbook' => self::BOOK, 'name' => 'Ana'];
 		$tool = 'contacts_create_contact';
 		$t = new EffectTranscript($this, 'contacts.create-plan-identity');
-		$plan = $this->gate->call($tool, $args);
-		$t->record('preview', $args, $plan, $this->state());
+		$plan = $this->gate->call($tool, $args + ['confirm' => false]);
+		$t->record('preview', $args + ['confirm' => false], $plan, $this->state());
 		$uid = $plan['body']->result->structuredContent->after->uid;
 		$token = $plan['body']->result->structuredContent->plan_state;
 		$this->assertStringStartsWith($uid . '.', $token);

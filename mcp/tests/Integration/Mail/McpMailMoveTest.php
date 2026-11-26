@@ -101,13 +101,13 @@ final class McpMailMoveTest extends IntegrationTestCase {
 
 		self::markCell('ml6-move-start');
 		$arguments = ['message_id' => $bySubject['Move to folder'], 'mailbox_id' => $folders['Move target']];
-		$plan = $this->call([self::TOOL, $arguments]);
+		$plan = $this->call([self::TOOL, $arguments + ['confirm' => false]]);
 		$this->assertTrue($plan['structuredContent']['requiresConfirmation']);
 		$this->assertArrayNotHasKey('subject', $plan['structuredContent']['target'], 'no subject without mail.messages');
 		$this->assertSame(['mailboxId' => $folders['Move target'], 'path' => 'Move target', 'kind' => 'folder'], $plan['structuredContent']['to']);
 		$this->assertSame($before, $imap->state(), 'a plan changes nothing on the server');
 
-		$done = $this->decoded($this->confirm($plan, $arguments));
+		$done = $this->decoded($this->execute($arguments));
 		$this->assertTrue($done['moved']);
 		$this->assertIsInt($done['newUid'], 'the server tells the new UID (COPYUID)');
 		$this->assertMovedTo($imap, '<Move-to-folder@mcp-it.example>', 'Move target', $done['newUid']);
@@ -121,7 +121,7 @@ final class McpMailMoveTest extends IntegrationTestCase {
 
 		$trash = ['message_id' => $bySubject['Move to trash'], 'mailbox_id' => $folders['Trash']];
 		$this->retention(30);
-		$plan = $this->call([self::TOOL, $trash]);
+		$plan = $this->call([self::TOOL, $trash + ['confirm' => false]]);
 		$this->assertSame(['mailboxId' => $folders['Trash'], 'path' => 'Trash', 'kind' => 'trash', 'retentionDays' => 30], $plan['structuredContent']['to']);
 		$this->assertSame([MailMoveMessages::trashNote(30)], $plan['structuredContent']['notes']);
 		$this->retention(null);
@@ -129,24 +129,24 @@ final class McpMailMoveTest extends IntegrationTestCase {
 		$this->assertSame(MailMoveMessages::planChanged(), $changed['structuredContent']['warnings'][0]['message'], 'a retention changed after the plan is not confirmed silently');
 		$this->assertSame([MailMoveMessages::trashNote(null)], $changed['structuredContent']['notes']);
 		$this->assertSame($current, $imap->state(), 'nothing moved on a changed warning');
-		$done = $this->decoded($this->confirm($changed, $trash));
+		$done = $this->decoded($this->execute($trash));
 		$this->assertMovedTo($imap, '<Move-to-trash@mcp-it.example>', 'Trash', $done['newUid']);
 
 		$junk = ['message_id' => $bySubject['Move to junk'], 'mailbox_id' => $folders['Junk']];
-		$plan = $this->call([self::TOOL, $junk]);
+		$plan = $this->call([self::TOOL, $junk + ['confirm' => false]]);
 		$this->assertSame([MailMoveMessages::junkNote()], $plan['structuredContent']['notes']);
-		$done = $this->decoded($this->confirm($plan, $junk));
+		$done = $this->decoded($this->execute($junk));
 		$this->assertMovedTo($imap, '<Move-to-junk@mcp-it.example>', 'Junk', $done['newUid']);
 		$this->assertSame([], $imap->state()['Junk']['flags'][$done['newUid']], 'no $junk keyword: moving reports nothing');
 
 		$current = $imap->state();
 		$same = ['message_id' => $bySubject['Move stays'], 'mailbox_id' => $folders['Move']];
-		$plan = $this->call([self::TOOL, $same]);
+		$plan = $this->call([self::TOOL, $same + ['confirm' => false]]);
 		$this->assertFalse($plan['structuredContent']['moves']);
-		$this->assertFalse($this->decoded($this->confirm($plan, $same))['moved']);
+		$this->assertFalse($this->decoded($this->execute($same))['moved']);
 
 		$regen = $this->subjects($this->mailbox($own, 'Regen'))['Regen original'];
-		$stale = $this->call([self::TOOL, ['message_id' => $regen, 'mailbox_id' => $folders['Move target']]]);
+		$stale = $this->call([self::TOOL, ['message_id' => $regen, 'mailbox_id' => $folders['Move target']] + ['confirm' => false]]);
 		$refused = $this->call([self::TOOL, ['message_id' => $regen, 'mailbox_id' => $folders['Move target'], 'confirm' => true, PlanState::ARGUMENT => $stale['structuredContent'][PlanState::ARGUMENT]]]);
 		$this->assertSame(['content' => [['type' => 'text', 'text' => MailMessages::messageChanged()]], 'isError' => true], $refused, 'never a UID of another generation');
 		$foreign = $this->messageIds($this->mailbox($this->account(MailActor::BOB), 'INBOX'))[0];
@@ -211,14 +211,13 @@ final class McpMailMoveTest extends IntegrationTestCase {
 	}
 
 	/**
-	 * The confirmed call of a plan.
+	 * Execute an authorized write directly.
 	 *
-	 * @param array<string, mixed> $plan the MCP result of the plan
 	 * @param array<string, mixed> $arguments the arguments of the plan
-	 * @return array<string, mixed> the MCP result of the confirmed call
+	 * @return array<string, mixed> the MCP result of the direct call
 	 */
-	private function confirm(array $plan, array $arguments): array {
-		$result = $this->call([self::TOOL, $arguments + ['confirm' => true, PlanState::ARGUMENT => $plan['structuredContent'][PlanState::ARGUMENT]]]);
+	private function execute(array $arguments): array {
+		$result = $this->call([self::TOOL, $arguments]);
 		$this->assertArrayNotHasKey('isError', $result, json_encode($result, JSON_THROW_ON_ERROR));
 		return $result;
 	}

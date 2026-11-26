@@ -31,9 +31,10 @@ final class GoldenFile {
 	 * @param TestCase $test the running test, for its assertions
 	 * @param string $path absolute path of the golden file
 	 * @param mixed $value value observed now; encoded with {@see self::encode()}
+	 * @param (\Closure(string):string)|null $migrateExpected Explicit compatibility migration of historical request shapes only.
 	 * @return void
 	 */
-	public static function assertMatches(TestCase $test, string $path, mixed $value): void {
+	public static function assertMatches(TestCase $test, string $path, mixed $value, ?\Closure $migrateExpected = null): void {
 		OracleRuntime::assertCanonical($test, $path);
 		$actual = self::encode($value);
 		if (self::updating()) {
@@ -46,6 +47,9 @@ final class GoldenFile {
 		}
 		$test->assertFileExists($path, 'Golden file missing; run with ' . self::UPDATE_ENV . '=1 to create it, then review the diff');
 		$expected = (string)file_get_contents($path);
+		if ($migrateExpected !== null && $expected !== $actual) {
+			$expected = $migrateExpected($expected);
+		}
 		if ($expected === $actual) {
 			$test->addToAssertionCount(1);
 			return;

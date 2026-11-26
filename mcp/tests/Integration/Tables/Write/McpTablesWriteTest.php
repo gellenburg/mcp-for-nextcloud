@@ -69,7 +69,7 @@ final class McpTablesWriteTest extends IntegrationTestCase {
 			['column_id' => $c['due'], 'value' => '2026-11-02'], ['column_id' => $c['site'], 'value' => ['url' => 'https://example.org/a', 'title' => 'Docs']],
 		]];
 		$before = $this->tablesAppRows();
-		$plan = WriteActor::run(WriteCellScene::OWNER, 'call', ['tool' => 'tables_create_row', 'arguments' => $arguments]);
+		$plan = WriteActor::run(WriteCellScene::OWNER, 'call', ['tool' => 'tables_create_row', 'arguments' => $arguments + ['confirm' => false]]);
 		$this->assertFalse($plan['isError'], $plan['text']);
 		$this->assertTrue($plan['structured']['requiresConfirmation']);
 		$this->assertSame($before, $this->tablesAppRows(), 'a plan writes nothing');
@@ -78,7 +78,7 @@ final class McpTablesWriteTest extends IntegrationTestCase {
 			array_values($after), 'the effect each pinned parser gives');
 
 		$confirmed = WriteActor::run(WriteCellScene::OWNER, 'call', ['tool' => 'tables_create_row',
-			'arguments' => $arguments + ['confirm' => true, 'plan_state' => $plan['structured']['plan_state']]]);
+			'arguments' => $arguments]);
 		$this->assertFalse($confirmed['isError'], $confirmed['text']);
 		$answer = json_decode($confirmed['text'], true, 512, JSON_THROW_ON_ERROR);
 		foreach ($answer['cells'] as $cell) {
@@ -102,8 +102,8 @@ final class McpTablesWriteTest extends IntegrationTestCase {
 	public function testACreateOnlyShareCreatesThroughTheView(): void {
 		$ids = WriteCellScene::ids();
 		$c = $ids['columns'];
-		$run = WriteActor::planAndConfirm(WriteCellScene::VIEWER, 'tables_create_row', ['view_id' => $ids['views']['write'],
-			'cells' => [['column_id' => $c['title'], 'value' => 'From the viewer'], ['column_id' => $c['amount'], 'value' => 3]]], ['confirm_shared' => true]);
+		$run = WriteActor::previewAndExecute(WriteCellScene::VIEWER, 'tables_create_row', ['view_id' => $ids['views']['write'],
+			'cells' => [['column_id' => $c['title'], 'value' => 'From the viewer'], ['column_id' => $c['amount'], 'value' => 3]]]);
 		$this->assertFalse($run['plan']['isError'], $run['plan']['text']);
 		$this->assertFalse($run['result']['isError'], $run['result']['text']);
 		foreach ([$run['plan']['text'], json_encode($run['plan']['structured'], JSON_THROW_ON_ERROR), $run['result']['text']] as $shown) {
@@ -146,8 +146,8 @@ final class McpTablesWriteTest extends IntegrationTestCase {
 		$this->assertSame([true, RowWriteMessages::sessionMismatch()], [$mismatch['isError'], $mismatch['text']]);
 		$this->assertSame($before, $this->tablesAppRows(), 'a refusal writes nothing');
 
-		$run = WriteActor::planAndConfirm(WriteCellScene::EDITOR, 'tables_update_row', ['view_id' => $view, 'row_id' => $alpha,
-			'cells' => [['column_id' => $c['amount'], 'value' => 25]]], ['confirm_shared' => true]);
+		$run = WriteActor::previewAndExecute(WriteCellScene::EDITOR, 'tables_update_row', ['view_id' => $view, 'row_id' => $alpha,
+			'cells' => [['column_id' => $c['amount'], 'value' => 25]]]);
 		$cell = $run['plan']['structured']['cells'][0];
 		// Numbers travel as JSON: 10.0 and 25.0 arrive as 10 and 25, so the values are compared as numbers.
 		$this->assertSame([$c['amount'], 'Amount', 10.0, 25.0], [$cell['columnId'], $cell['column'], (float)$cell['before'], (float)$cell['after']]);
@@ -166,7 +166,7 @@ final class McpTablesWriteTest extends IntegrationTestCase {
 		$ids = WriteCellScene::ids();
 		$c = $ids['columns'];
 		$arguments = ['table_id' => $ids['tables']['plans'], 'row_id' => $ids['rows'][1], 'cells' => [['column_id' => $c['amount'], 'value' => 20]]];
-		$plan = WriteActor::run(WriteCellScene::OWNER, 'call', ['tool' => 'tables_update_row', 'arguments' => $arguments]);
+		$plan = WriteActor::run(WriteCellScene::OWNER, 'call', ['tool' => 'tables_update_row', 'arguments' => $arguments + ['confirm' => false]]);
 		$previous = WriteActor::run(WriteCellScene::OWNER, 'column-limit', ['column' => $c['amount'], 'numberMax' => 2000])['previous'];
 		try {
 			$before = $this->tablesAppRows();
@@ -193,7 +193,7 @@ final class McpTablesWriteTest extends IntegrationTestCase {
 		$ids = WriteCellScene::ids();
 		$plans = $ids['tables']['plans'];
 		$count = count(WriteActor::run(WriteCellScene::OWNER, 'native', ['table_id' => $plans])['rows']);
-		$run = WriteActor::planAndConfirm(WriteCellScene::OWNER, 'tables_create_row', ['table_id' => $plans,
+		$run = WriteActor::previewAndExecute(WriteCellScene::OWNER, 'tables_create_row', ['table_id' => $plans,
 			'cells' => [['column_id' => $ids['columns']['title'], 'value' => 'After the insert']]], ['failAfterInsert' => true]);
 		$this->assertSame([true, RowWriteMessages::createUncertain()], [$run['result']['isError'], $run['result']['text']]);
 		$rows = WriteActor::run(WriteCellScene::OWNER, 'native', ['table_id' => $plans])['rows'];
@@ -221,7 +221,7 @@ final class McpTablesWriteTest extends IntegrationTestCase {
 			}
 			$this->assertSame($before, $this->tablesAppRows(), 'a null number is refused before anything is written');
 		} else {
-			$run = WriteActor::planAndConfirm(WriteCellScene::OWNER, 'tables_create_row', $create);
+			$run = WriteActor::previewAndExecute(WriteCellScene::OWNER, 'tables_create_row', $create);
 			$this->assertFalse($run['result']['isError'], $run['result']['text']);
 			$rowId = (int)json_decode($run['result']['text'], true, 512, JSON_THROW_ON_ERROR)['target']['rowId'];
 			$read = array_column(self::row(WriteCellScene::OWNER, $plans, $rowId)['data'], 'value', 'columnId');
@@ -234,7 +234,7 @@ final class McpTablesWriteTest extends IntegrationTestCase {
 		$this->assertSame([true, RowWriteMessages::viewDefaultsRefused()], [$refused['isError'], $refused['text']]);
 		$this->assertStringNotContainsString('Level', $refused['text']);
 		$this->assertSame($before, $this->tablesAppRows(), 'the hidden value outside the limits never reaches Tables');
-		$run = WriteActor::planAndConfirm(WriteCellScene::OWNER, 'tables_create_row', ['view_id' => $ids['views']['starsBound'],
+		$run = WriteActor::previewAndExecute(WriteCellScene::OWNER, 'tables_create_row', ['view_id' => $ids['views']['starsBound'],
 			'cells' => [['column_id' => $c['title'], 'value' => 'At the limit']]]);
 		$this->assertFalse($run['result']['isError'], $run['result']['text']);
 		$rowId = (int)json_decode($run['result']['text'], true, 512, JSON_THROW_ON_ERROR)['target']['rowId'];

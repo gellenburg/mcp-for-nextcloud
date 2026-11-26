@@ -3,7 +3,8 @@
         {
             "step": "diverged-plan",
             "request": {
-                "batch_id": "<batch_id#1>"
+                "batch_id": "<batch_id#1>",
+                "confirm": false
             },
             "response": {
                 "status": 200,

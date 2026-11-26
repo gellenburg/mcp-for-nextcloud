@@ -5,7 +5,8 @@
             "request": {
                 "id": 102,
                 "content": "new",
-                "etag": "<etag#1>"
+                "etag": "<etag#1>",
+                "confirm": false
             },
             "response": {
                 "status": 200,

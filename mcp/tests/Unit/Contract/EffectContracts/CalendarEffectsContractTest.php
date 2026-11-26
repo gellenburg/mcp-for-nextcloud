@@ -69,7 +69,7 @@ final class CalendarEffectsContractTest extends TestCase {
 			->withoutVisibility(self::NO_VISIBILITY)
 			->normalizing(fn (): array => $this->random->literals());
 		(new FlowRunner($this, $this->gate, 'calendar'))->run($flow);
-		$body = $this->gate->call($flow->tool, $flow->confirmed($this->gate->call($flow->tool, $flow->arguments())['body']))['body'];
+		$body = $this->gate->call($flow->tool, $flow->confirmed($this->gate->call($flow->tool, $flow->arguments() + ['confirm' => false])['body']))['body'];
 		$this->assertFalse($body->result->isError ?? false, 'a second creation must succeed: ' . json_encode($body));
 		$this->assertCount(3, $this->store->objects[1], 'the fixture event and two created events');
 		// On the bytes the store holds, before the transcript replaced them: two UUIDs, stamps of now or of the clock.
@@ -109,7 +109,7 @@ final class CalendarEffectsContractTest extends TestCase {
 	 * @return void
 	 */
 	private function assertStaleEtagIsRefused(CriticalFlow $flow): void {
-		$stale = $flow->confirmed($this->gate->call($flow->tool, $flow->arguments())['body']);
+		$stale = $flow->confirmed($this->gate->call($flow->tool, $flow->arguments() + ['confirm' => false])['body']);
 		$row = $this->store->objects[1][self::EVENT];
 		$this->store->objects[1][self::EVENT] = ['data' => str_replace('SUMMARY:', "COMMENT:outro cliente\r\nSUMMARY:", $row['data']),
 			'etag' => '"outro-cliente"'] + $row;

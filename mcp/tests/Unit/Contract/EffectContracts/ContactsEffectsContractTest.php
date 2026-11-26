@@ -85,7 +85,7 @@ final class ContactsEffectsContractTest extends TestCase {
 				. 'an address book or a card from MCP (VisibilityGuard and FilesAccessGuard do not apply). The accounts '
 				. 'catalog is read-only by design and foreign books are not found: permission refusals, not visibility.');
 		(new FlowRunner($this, $this->gate, 'contacts'))->run($flow);
-		$stale = $flow->confirmed($this->gate->call($flow->tool, $flow->arguments())['body']);
+		$stale = $flow->confirmed($this->gate->call($flow->tool, $flow->arguments() + ['confirm' => false])['body']);
 		// Another client changes the card after the plan.
 		$this->contacts->plant(1, self::CARD, str_replace('END:VCARD', "NOTE:outro cliente\r\nEND:VCARD",
 			$this->contacts->cards[1][self::CARD]['data']));

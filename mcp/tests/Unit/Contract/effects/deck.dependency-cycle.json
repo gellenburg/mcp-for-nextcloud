@@ -4,7 +4,8 @@
             "step": "acyclic-preview",
             "request": {
                 "cardId": 8,
-                "targetId": 7
+                "targetId": 7,
+                "confirm": false
             },
             "response": {
                 "status": 200,

@@ -83,7 +83,7 @@ final class MailMoveToolsRegistryTest extends TestCase {
 	public function testThePlanChangesNothingAndTheConfirmedCallMoves(): void {
 		[$registry, $app] = $this->registry(['move' => true]);
 		$app->withFolder(1, ['id' => 5, 'name' => 'INBOX'])->withFolder(1, ['id' => 6, 'name' => 'Archive'])->withMessage(5, ['id' => 50]);
-		$plan = $registry->call(self::TOOL, ['message_id' => 50, 'mailbox_id' => 6], 'alice');
+		$plan = $registry->call(self::TOOL, ['message_id' => 50, 'mailbox_id' => 6] + ['confirm' => false], 'alice');
 		$this->assertTrue($plan['structuredContent']['requiresConfirmation']);
 		$this->assertSame([], $app->imapCommands());
 		$this->assertSame([], $app->moved);

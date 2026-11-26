@@ -82,7 +82,7 @@ final class MailFlagToolsRegistryTest extends TestCase {
 	public function testThePlanChangesNothingAndTheConfirmedCallChangesTheFlag(): void {
 		[$registry, $app] = $this->registry(['flags' => true]);
 		$app->withFolder(1, ['id' => 5, 'name' => 'INBOX'])->withMessage(5, ['id' => 50]);
-		$plan = $registry->call(self::TOOL, ['message_id' => 50, 'seen' => true], 'alice');
+		$plan = $registry->call(self::TOOL, ['message_id' => 50, 'seen' => true] + ['confirm' => false], 'alice');
 		$this->assertTrue($plan['structuredContent']['requiresConfirmation']);
 		$this->assertSame([], $app->imapCommands());
 		$this->assertSame([], $app->messages[50]['serverFlags']);

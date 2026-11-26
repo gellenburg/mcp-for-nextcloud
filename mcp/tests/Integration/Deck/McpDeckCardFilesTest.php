@@ -33,7 +33,7 @@ final class McpDeckCardFilesTest extends IntegrationTestCase {
 
 	private function confirmed(string $uid, array $f): array {
 		$args = $this->args($f);
-		$p = $this->data($this->call($uid, $args, true));
+		$p = $this->data($this->call($uid, $args + ['confirm' => false], true));
 		self::assertTrue($p['requiresConfirmation']);
 		self::assertSame(DeckFixture::OWNER, $p['createdBy']);
 		self::assertStringContainsString('all current and future', $p['message']);
@@ -78,13 +78,11 @@ final class McpDeckCardFilesTest extends IntegrationTestCase {
 		self::assertContains($f['visibleShare'], $this->preserved($f)['a']);
 	}
 
-	public function testEditorUnlinksVisibleThirdPartyShareOnlyAfterBothConfirmations(): void {
+	public function testEditorDirectlyUnlinksVisibleThirdPartyShare(): void {
 		$f = $this->seed();
-		$args = $this->confirmed(DeckFixture::EDITOR, $f);
+		$this->confirmed(DeckFixture::EDITOR, $f); // Explicit preview remains read-only.
 		self::assertContains($f['visibleShare'], $this->preserved($f)['a']);
-		self::assertSame('shared', $this->data($this->call(DeckFixture::EDITOR, $args, true))['scope']);
-		self::assertContains($f['visibleShare'], $this->preserved($f)['a']);
-		$r = $this->data($this->call(DeckFixture::EDITOR, $args + ['confirm_shared' => true], true));
+		$r = $this->data($this->call(DeckFixture::EDITOR, $this->args($f), true));
 		self::assertTrue($r['confirmed']);
 		self::assertTrue($r['unlinked']);
 		self::assertArrayNotHasKey('file', $r, 'Do not echo a pre-write file snapshot');

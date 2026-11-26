@@ -7,18 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Mcp\Mcp\Guide;
 use OCA\Mcp\Mcp\Tools\{Results\ToolFailure, Results\ToolResult, ToolModule, ToolPresentation};
-/**
- * The `mcp_guide` tool: what the model needs to know about the other tools, built from the very
- * definitions tools/list is built from.
- *
- * Everything printed here comes from a ToolModule::definitions() entry the registry already filtered for
- * this user — the title from ToolPresentation, the description, the inputSchema and the annotations — so
- * a guide can never describe a tool that changed: it changes with it. What no schema can carry is the
- * behaviour around the tools, and that is what {@see ToolGuideNotes} adds, one short note per module, next
- * to the module itself.
- *
- * The guide only reads: it never calls a module, it only renders what the module declared.
- */
+/** Read-only tool guide built from authorized definitions and module behaviour notes. */
 final class ToolGuide {
 	/** Technical name of the guide tool. */
 	public const TOOL = 'mcp_guide';
@@ -200,7 +189,9 @@ final class ToolGuide {
 		$lines[] = ($readOnly ? 'Reads only.' : 'Writes: it changes something in this Nextcloud.')
 			. ' ' . $definition['description'];
 		if ($annotations['destructiveHint'] === true) {
-			$lines[] = 'Flagged as destructive: the client is expected to ask the user before it runs.';
+			$lines[] = \OCA\Mcp\Mcp\Confirmation\WriteGate::isDirectSchema($definition)
+				? 'Flagged as destructive: the client may independently apply its own approval policy.'
+				: 'Flagged as destructive: the client is expected to ask the user before it runs.';
 		}
 		$parameters = $this->parameters($definition['inputSchema']);
 		if ($parameters !== []) {
@@ -255,15 +246,16 @@ final class ToolGuide {
 	/**
 	 * The write gates of a tool.
 	 *
-	 * Every tool that is not a read asks for `confirm: true`, and the schema says so: the registry
-	 * injects the argument into the write tools and refuses the call without it, so the guide derives the
-	 * rule from the operation instead of listing which tools happen to have the property today.
+	 * Direct catalog writes have no conversational gate; legacy module gates are described from their schemas.
 	 *
 	 * @param array<string, mixed> $definition enriched definition of registry::definitions()
 	 * @return list<array{name:string, summary:string}>
 	 */
 	private function gates(array $definition): array {
 		$gates = [];
+		if (\OCA\Mcp\Mcp\Confirmation\WriteGate::isDirectSchema($definition)) {
+			return [];
+		}
 		if ($definition['operation'] !== 'read') {
 			$gates[] = ['name' => 'confirm', 'summary' => 'boolean, must be true'];
 		}
@@ -408,7 +400,7 @@ final class ToolGuide {
 		// for the user. Saying so in the answer itself keeps a client that relays the text from dropping the
 		// only hint the reader has that the text was not written for their eyes.
 		return ToolResult::structured(self::LANGUAGE_NOTE . "\n\n"
-			. 'Write confirmation plans arrive as readable text in the user’s language, with the complete plan in structuredContent. Show that text to the user exactly as received.'
+			. 'Catalog writes execute directly unless confirm=false requests a dry run. Existing client approval policies still apply. Dry-run plans and conflicts include structuredContent.'
 			. "\n\n" . $markdown, ['language_note' => self::LANGUAGE_NOTE] + $data);
 	}
 }

@@ -54,7 +54,7 @@ final class CheckoutResolver {
 			return $this->refusals->refuse(Http::STATUS_NOT_FOUND, CheckoutMessages::tokenInvalid());
 		}
 		$uid = $row->userId;
-		if (($refusal = $this->policy->admit($uid, CheckoutPolicy::OPERATION) ?? $this->policy->scopeReadable()) !== null) {
+		if (($refusal = $this->policy->admit($uid, $kind === CheckoutToken::KIND_READ ? 'read' : CheckoutPolicy::OPERATION) ?? $this->policy->scopeReadable()) !== null) {
 			return $refusal;
 		}
 		$this->language->forOwner($uid);

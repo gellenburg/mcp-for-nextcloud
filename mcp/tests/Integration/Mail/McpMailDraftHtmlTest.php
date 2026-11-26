@@ -69,7 +69,7 @@ final class McpMailDraftHtmlTest extends IntegrationTestCase {
 	}
 
 	/** @return void */
-	public function testConfirmedHtmlIsThePlannedMimePartAndRefusalsAppendNothing(): void {
+	public function testDirectHtmlIsThePreviewedMimePartAndRefusalsAppendNothing(): void {
 		Server::get(GrantPolicy::class)->setGrant(MailActor::ALICE, 'mail', 'draft', true);
 		$account = $this->account(MailActor::ALICE);
 		$args = ['account_id' => $account, 'html' => true, 'bcc' => ['copy@example.com'],
@@ -78,13 +78,13 @@ final class McpMailDraftHtmlTest extends IntegrationTestCase {
 		try {
 			$before = $imap->state();
 			$outbox = $this->select('mail_local_messages', 'account_id', $account, 'id');
-			$plan = $this->call($args);
+			$plan = $this->call($args + ['confirm' => false]);
 			$this->assertFalse($plan['isError'] ?? false, json_encode($plan));
 			$this->assertSame($before, $imap->state(), 'preview never appends');
 			$this->assertTrue($plan['structuredContent']['draft']['html']);
 			$this->assertSame(1, $plan['structuredContent']['draft']['removed']['unwrapped-element']);
 			$this->assertSame(['a'], $plan['structuredContent']['draft']['unwrappedElements']);
-			$done = $this->decoded($this->call($args + ['confirm' => true, 'plan_state' => $plan['structuredContent']['plan_state']]));
+			$done = $this->decoded($this->call($args));
 			$this->assertFalse($done['sent']);
 			$after = $imap->state();
 			$this->assertSame($before['Drafts']['exists'] + 1, $after['Drafts']['exists']);

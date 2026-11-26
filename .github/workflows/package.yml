@@ -3,13 +3,13 @@
 #
 # Verification-only CI: builds the store package (rejected by scripts/check_package.php
 # on any problem) and checks the REUSE compliance of the repository.
-# It never publishes, releases or uploads anything.
+# It does not publish a release; it retains the AppDrop ZIP as a CI artifact.
 
 name: Package
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev/direct-execution]
   pull_request:
   workflow_dispatch:
 
@@ -36,9 +36,15 @@ jobs:
           php-version: '8.2'
           extensions: mbstring, intl, gd, zip, sqlite3
           coverage: none
-      - name: Build the package (fails when check_package.php refuses it)
-        run: sh scripts/package.sh
+      - name: Build the validated production package and AppDrop ZIP
+        run: sh scripts/package-appdrop.sh
         working-directory: mcp
+      - name: Upload AppDrop ZIP for testing
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mcp-appdrop
+          path: mcp/build/*-appdrop.zip
+          if-no-files-found: error
   reuse:
     name: REUSE compliance
     runs-on: ubuntu-latest

@@ -55,19 +55,17 @@ final class WriteActor {
 	}
 
 	/**
-	 * The plan of a write, then its confirmation with the plan's state, as a client does after the user agreed.
+	 * An explicit dry run, followed by an independent direct write.
 	 *
 	 * @param string $uid the caller
 	 * @param string $tool the tool
 	 * @param array<string, mixed> $arguments the arguments
-	 * @param array<string, mixed> $options more input of the confirmed call (confirm_shared, failAfterInsert)
-	 * @return array{plan: array<string, mixed>, result: array<string, mixed>} the plan and the confirmed answer
+	 * @param array<string, mixed> $options test-only input of the direct call (failAfterInsert)
+	 * @return array{plan: array<string, mixed>, result: array<string, mixed>} the dry run and the direct answer
 	 */
-	public static function planAndConfirm(string $uid, string $tool, array $arguments, array $options = []): array {
-		$plan = self::run($uid, 'call', ['tool' => $tool, 'arguments' => $arguments]);
-		$confirmed = $arguments + ['confirm' => true, 'plan_state' => (string)($plan['structured']['plan_state'] ?? '')]
-			+ (($options['confirm_shared'] ?? false) ? ['confirm_shared' => true] : []);
-		return ['plan' => $plan, 'result' => self::run($uid, 'call', ['tool' => $tool, 'arguments' => $confirmed,
+	public static function previewAndExecute(string $uid, string $tool, array $arguments, array $options = []): array {
+		$plan = self::run($uid, 'call', ['tool' => $tool, 'arguments' => $arguments + ['confirm' => false]]);
+		return ['plan' => $plan, 'result' => self::run($uid, 'call', ['tool' => $tool, 'arguments' => $arguments,
 			'failAfterInsert' => (bool)($options['failAfterInsert'] ?? false)])];
 	}
 }

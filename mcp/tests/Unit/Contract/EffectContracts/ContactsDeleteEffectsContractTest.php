@@ -115,7 +115,7 @@ final class ContactsDeleteEffectsContractTest extends TestCase {
 	/** @return void a deletion confirmed with the ETag of an older card is refused before any backup or delete */
 	public function testDeletionWithAStaleEtagIsRefused(): void {
 		$arguments = ['addressbook' => self::BOOK, 'uri' => 'c1.vcf'];
-		$plan = $this->gate->call('contacts_delete_contact', $arguments)['body'];
+		$plan = $this->gate->call('contacts_delete_contact', $arguments + ['confirm' => false])['body'];
 		$stale = $arguments + ['confirm' => true, 'etag' => $plan->result->structuredContent->etag];
 		// Another client changes the card after the plan.
 		$this->contacts->plant(1, 'c1.vcf', str_replace('END:VCARD', "NOTE:outro cliente\r\nEND:VCARD",

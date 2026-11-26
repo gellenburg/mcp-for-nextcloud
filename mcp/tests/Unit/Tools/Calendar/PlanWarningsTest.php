@@ -22,7 +22,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	 * @return array<string, mixed> structured plan of calendar_create_event
 	 */
 	private function createPlan(array $extra = []): array {
-		return self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL] + $extra + self::EVENT, 'alice'));
+		return self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL] + $extra + self::EVENT + ['confirm' => false], 'alice'));
 	}
 
 	/**
@@ -57,7 +57,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 
 	public function testBusyOnlyCollisionNeverRevealsTheAppointment(): void {
 		$this->store->addObject(3, 'secret.ics', self::ics("UID:secret\nSUMMARY:Consulta médica do Roberto\nCLASS:CONFIDENTIAL\nDTSTART:20261001T170000Z\nDTEND:20261001T180000Z"));
-		$plan = self::json($this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'confirm_shared' => true] + self::EVENT, 'alice'));
+		$plan = self::json($this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'confirm_shared' => true] + self::EVENT + ['confirm' => false], 'alice'));
 		self::assertCount(1, $plan['warnings']);
 		self::assertSame('collision', $plan['warnings'][0]['type']);
 		self::assertStringStartsWith('Sobrepõe um compromisso ocupado (', $plan['warnings'][0]['message']);
@@ -75,7 +75,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 
 	public function testAllDayEventCollidesWithAnyEventOfTheDay(): void {
 		$this->store->addObject(1, 'dentist.ics', self::ics("UID:dentist\nSUMMARY:Dentista\nDTSTART:20261001T173000Z\nDTEND:20261001T183000Z"));
-		$plan = self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Feriado', 'start' => '2026-10-01', 'end' => '2026-10-02', 'allDay' => true], 'alice'));
+		$plan = self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Feriado', 'start' => '2026-10-01', 'end' => '2026-10-02', 'allDay' => true] + ['confirm' => false], 'alice'));
 		self::assertSame('collision', $plan['warnings'][0]['type']);
 		self::assertStringContainsString('Dentista', $plan['warnings'][0]['message']);
 	}
@@ -86,7 +86,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	 */
 	private function allDayCollisions(string $day = '2026-10-01'): array {
 		$next = (new \DateTimeImmutable($day))->modify('+1 day')->format('Y-m-d');
-		$plan = self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Feriado', 'start' => $day, 'end' => $next, 'allDay' => true], 'alice'));
+		$plan = self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Feriado', 'start' => $day, 'end' => $next, 'allDay' => true] + ['confirm' => false], 'alice'));
 		return array_values(array_filter($plan['warnings'], static fn (array $w): bool => $w['type'] === 'collision'));
 	}
 
@@ -174,7 +174,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 		$override = "BEGIN:VEVENT\nUID:serie\nRECURRENCE-ID:20261001T090000Z\nCLASS:PRIVATE\nSUMMARY:Segredo do Roberto\nDTSTART:20261001T170000Z\nDTEND:20261001T180000Z\nEND:VEVENT";
 		$this->store->addObject(3, 'serie.ics', self::ics($master, $override));
 
-		$result = $this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'confirm_shared' => true] + self::EVENT, 'alice');
+		$result = $this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'confirm_shared' => true] + self::EVENT + ['confirm' => false], 'alice');
 
 		self::assertSame([], self::json($result)['warnings']);
 		self::assertStringNotContainsString('Segredo do Roberto', json_encode($result, JSON_UNESCAPED_UNICODE));
@@ -183,7 +183,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	/** The plan does not reveal an appointment whose CLASS is unknown either: it is handled as private. */
 	public function testUnknownClassOfAnotherPersonsEventIsNotInThePlan(): void {
 		$this->store->addObject(3, 'x.ics', self::ics("UID:x\nCLASS:X-FOO\nSUMMARY:Segredo desconhecido\nDTSTART:20261001T170000Z\nDTEND:20261001T180000Z"));
-		$result = $this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'confirm_shared' => true] + self::EVENT, 'alice');
+		$result = $this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'confirm_shared' => true] + self::EVENT + ['confirm' => false], 'alice');
 		self::assertSame([], self::json($result)['warnings']);
 		self::assertStringNotContainsString('Segredo desconhecido', json_encode($result, JSON_UNESCAPED_UNICODE));
 	}
@@ -194,7 +194,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 		$override = "BEGIN:VEVENT\nUID:serie\nRECURRENCE-ID:20261001T090000Z\nCLASS:CONFIDENTIAL\nSUMMARY:Segredo do Roberto\nDTSTART:20261001T170000Z\nDTEND:20261001T180000Z\nEND:VEVENT";
 		$this->store->addObject(3, 'serie.ics', self::ics($master, $override));
 
-		$result = $this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'confirm_shared' => true] + self::EVENT, 'alice');
+		$result = $this->registry->call('calendar_create_event', ['calendar' => self::TEAM, 'confirm_shared' => true] + self::EVENT + ['confirm' => false], 'alice');
 
 		$plan = self::json($result);
 		self::assertCount(1, $plan['warnings']);
@@ -218,7 +218,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	#[\PHPUnit\Framework\Attributes\DataProvider('dayInEachZone')]
 	public function testAllDayEventAsksTheGuestsAboutTheDayInTheAccountZone(string $zone, string $from, string $to): void {
 		$this->accountTimezone = $zone;
-		self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Feriado', 'start' => '2026-10-01', 'end' => '2026-10-02', 'allDay' => true, 'attendees' => ['carla']], 'alice'));
+		self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Feriado', 'start' => '2026-10-01', 'end' => '2026-10-02', 'allDay' => true, 'attendees' => ['carla']] + ['confirm' => false], 'alice'));
 		self::assertSame([[$from, $to]], $this->availabilityAsked);
 	}
 
@@ -227,16 +227,16 @@ final class PlanWarningsTest extends CalendarTestCase {
 		$args = ['calendar' => self::PERSONAL, 'summary' => 'Feriado', 'start' => '2026-10-01', 'end' => '2026-10-02', 'allDay' => true, 'attendees' => ['carla']];
 		// 30/09 22:00-23:00 in Sao Paulo is 01/10 01:00-02:00 UTC: inside the UTC day, outside the day of the account.
 		$this->busyBlocks = ['carla@example.invalid' => [['2026-10-01T01:00:00Z', '2026-10-01T02:00:00Z']]];
-		self::assertSame([], self::messages(self::json($this->registry->call('calendar_create_event', $args, 'alice'))['warnings'], 'busy'));
+		self::assertSame([], self::messages(self::json($this->registry->call('calendar_create_event', $args + ['confirm' => false], 'alice'))['warnings'], 'busy'));
 		// 01/10 23:00-23:30 in Sao Paulo is 02/10 02:00-02:30 UTC: outside the UTC day, inside the day of the account.
 		$this->busyBlocks = ['carla@example.invalid' => [['2026-10-02T02:00:00Z', '2026-10-02T02:30:00Z']]];
-		self::assertSame(['Carla Dias está ocupado(a) neste horário.'], self::messages(self::json($this->registry->call('calendar_create_event', $args, 'alice'))['warnings'], 'busy'));
+		self::assertSame(['Carla Dias está ocupado(a) neste horário.'], self::messages(self::json($this->registry->call('calendar_create_event', $args + ['confirm' => false], 'alice'))['warnings'], 'busy'));
 	}
 
 	/** The current slot of a stored all-day event is the same day in the same zone, so only the days added are asked. */
 	public function testUpdateExtendingAnAllDayEventAsksOnlyAboutTheDaysAdded(): void {
 		$this->store->addObject(1, 'event.ics', self::ics("UID:event\nSUMMARY:Feriado\nDTSTART;VALUE=DATE:20261001\nDTEND;VALUE=DATE:20261002\nATTENDEE;CN=Carla Dias:mailto:carla@example.invalid"));
-		self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01', 'end' => '2026-10-03', 'allDay' => true], 'alice'));
+		self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01', 'end' => '2026-10-03', 'allDay' => true] + ['confirm' => false], 'alice'));
 		self::assertSame([['2026-10-02T03:00:00Z', '2026-10-03T03:00:00Z']], $this->availabilityAsked);
 	}
 
@@ -294,7 +294,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 		$this->store->addObject(1, 'dentist.ics', self::ics("UID:dentist\nSUMMARY:Dentista\nDTSTART:20261001T173000Z\nDTEND:20261001T183000Z"));
 		$this->busyEmails = ['carla@example.invalid'];
 		$args = ['calendar' => self::PERSONAL, 'attendees' => ['carla']] + self::EVENT;
-		self::assertNotSame([], self::json($this->registry->call('calendar_create_event', $args, 'alice'))['warnings']);
+		self::assertNotSame([], self::json($this->registry->call('calendar_create_event', $args + ['confirm' => false], 'alice'))['warnings']);
 		$this->assertNoWrites();
 		$result = $this->registry->call('calendar_create_event', $args + ['confirm' => true], 'alice');
 		self::assertArrayNotHasKey('isError', $result);
@@ -304,7 +304,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testWarningsAreRenderedAsTextForThePerson(): void {
 		$this->store->addObject(1, 'dentist.ics', self::ics("UID:dentist\nSUMMARY:Dentista\nDTSTART:20261001T173000Z\nDTEND:20261001T183000Z"));
 		$this->busyEmails = ['bob@example.invalid'];
-		$result = $this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'attendees' => ['bob']] + self::EVENT, 'alice');
+		$result = $this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'attendees' => ['bob']] + self::EVENT + ['confirm' => false], 'alice');
 		$text = $result['content'][0]['text'];
 		self::assertStringContainsString('### Avisos', $text);
 		self::assertStringContainsString('- Participantes: Roberto Almeida', $text);
@@ -338,14 +338,14 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testUpdateOfTextAloneAddsNoWarnings(): void {
 		$this->seedEvent();
 		$this->store->addObject(1, 'other.ics', self::ics("UID:other\nSUMMARY:Outro\nDTSTART:20261001T120000Z\nDTEND:20261001T130000Z"));
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'summary' => 'Novo'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'summary' => 'Novo'] + ['confirm' => false], 'alice'));
 		self::assertSame([], $plan['warnings']);
 	}
 
 	public function testUpdateOfTimingChecksCollisionsExcludingTheEventItself(): void {
 		$this->seedEvent();
 		$this->store->addObject(1, 'other.ics', self::ics("UID:other\nSUMMARY:Outro\nDTSTART:20261001T140000Z\nDTEND:20261001T150000Z"));
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:30:00Z', 'end' => '2026-10-01T14:30:00Z'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:30:00Z', 'end' => '2026-10-01T14:30:00Z'] + ['confirm' => false], 'alice'));
 		self::assertCount(1, $plan['warnings']);
 		self::assertStringContainsString('Outro', $plan['warnings'][0]['message']);
 		self::assertStringNotContainsString('Reunião', $plan['warnings'][0]['message']);
@@ -354,7 +354,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testUpdateOfTimingChecksTheAvailabilityOfTheCurrentGuests(): void {
 		$this->seedEvent("\nATTENDEE;CN=Carla Dias:mailto:carla@example.invalid");
 		$this->busyEmails = ['carla@example.invalid'];
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T15:00:00Z', 'end' => '2026-10-01T16:00:00Z'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T15:00:00Z', 'end' => '2026-10-01T16:00:00Z'] + ['confirm' => false], 'alice'));
 		self::assertSame(['Carla Dias está ocupado(a) neste horário.'], self::messages($plan['warnings'], 'busy'));
 	}
 
@@ -362,7 +362,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testUpdateInsideTheCurrentSlotDoesNotReportTheGuestBusyByTheEventItself(): void {
 		$this->seedEvent("\nATTENDEE;CN=Carla Dias:mailto:carla@example.invalid");
 		$this->busyBlocks = ['carla@example.invalid' => [['2026-10-01T12:00:00Z', '2026-10-01T13:00:00Z']]];
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:15:00Z', 'end' => '2026-10-01T12:45:00Z'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:15:00Z', 'end' => '2026-10-01T12:45:00Z'] + ['confirm' => false], 'alice'));
 		self::assertSame([], self::messages($plan['warnings'], 'busy'));
 		self::assertSame([], $this->availabilityAsked, 'nothing outside the own slot is left to ask');
 	}
@@ -370,7 +370,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testUpdateOverlappingTheCurrentSlotOnlyAsksAboutTheNewPart(): void {
 		$this->seedEvent("\nATTENDEE;CN=Carla Dias:mailto:carla@example.invalid");
 		$this->busyBlocks = ['carla@example.invalid' => [['2026-10-01T12:00:00Z', '2026-10-01T13:00:00Z']]];
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:30:00Z', 'end' => '2026-10-01T13:30:00Z'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:30:00Z', 'end' => '2026-10-01T13:30:00Z'] + ['confirm' => false], 'alice'));
 		self::assertSame([], self::messages($plan['warnings'], 'busy'));
 		self::assertSame([['2026-10-01T13:00:00Z', '2026-10-01T13:30:00Z']], $this->availabilityAsked);
 	}
@@ -378,14 +378,14 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testUpdateStillReportsAnotherAppointmentOfTheGuestOutsideTheCurrentSlot(): void {
 		$this->seedEvent("\nATTENDEE;CN=Carla Dias:mailto:carla@example.invalid");
 		$this->busyBlocks = ['carla@example.invalid' => [['2026-10-01T12:00:00Z', '2026-10-01T13:00:00Z'], ['2026-10-01T13:10:00Z', '2026-10-01T13:20:00Z']]];
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:30:00Z', 'end' => '2026-10-01T13:30:00Z'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:30:00Z', 'end' => '2026-10-01T13:30:00Z'] + ['confirm' => false], 'alice'));
 		self::assertSame(['Carla Dias está ocupado(a) neste horário.'], self::messages($plan['warnings'], 'busy'));
 	}
 
 	public function testUpdateAskingBeforeAndAfterTheCurrentSlotAsksBothParts(): void {
 		$this->seedEvent("\nATTENDEE;CN=Carla Dias:mailto:carla@example.invalid");
 		$this->busyBlocks = ['carla@example.invalid' => [['2026-10-01T12:00:00Z', '2026-10-01T13:00:00Z']]];
-		self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T11:30:00Z', 'end' => '2026-10-01T13:30:00Z'], 'alice'));
+		self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T11:30:00Z', 'end' => '2026-10-01T13:30:00Z'] + ['confirm' => false], 'alice'));
 		self::assertSame([['2026-10-01T11:30:00Z', '2026-10-01T12:00:00Z'], ['2026-10-01T13:00:00Z', '2026-10-01T13:30:00Z']], $this->availabilityAsked);
 	}
 
@@ -393,7 +393,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testUpdateAddingAGuestStillChecksTheCurrentSlotForThem(): void {
 		$this->seedEvent();
 		$this->busyBlocks = ['bob@example.invalid' => [['2026-10-01T12:00:00Z', '2026-10-01T13:00:00Z']]];
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'attendees' => ['bob']], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'attendees' => ['bob']] + ['confirm' => false], 'alice'));
 		self::assertSame(['Roberto Almeida está ocupado(a) neste horário.'], self::messages($plan['warnings'], 'busy'));
 	}
 
@@ -407,7 +407,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testUpdateOfGuestsChecksAvailabilityAndSharing(): void {
 		$this->seedEvent();
 		$this->busyEmails = ['bob@example.invalid'];
-		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'attendees' => ['bob']], 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'attendees' => ['bob']] + ['confirm' => false], 'alice'));
 		self::assertSame(['Roberto Almeida está ocupado(a) neste horário.'], self::messages($plan['warnings'], 'busy'));
 		self::assertSame('calendarNotShared', $plan['warnings'][1]['type']);
 		self::assertSame(['path' => self::TEAM, 'name' => 'Equipe (bob)'], $plan['suggestedCalendar']);
@@ -417,7 +417,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 		$this->seedEvent();
 		$this->store->addObject(1, 'other.ics', self::ics("UID:other\nSUMMARY:Outro\nDTSTART:20261001T140000Z\nDTEND:20261001T150000Z"));
 		$args = ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T14:00:00Z', 'end' => '2026-10-01T15:00:00Z'];
-		self::assertNotSame([], self::json($this->registry->call('calendar_update_event', $args, 'alice'))['warnings']);
+		self::assertNotSame([], self::json($this->registry->call('calendar_update_event', $args + ['confirm' => false], 'alice'))['warnings']);
 		self::assertArrayNotHasKey('isError', $this->registry->call('calendar_update_event', $args + ['confirm' => true], 'alice'));
 		self::assertCount(1, $this->dav->calls);
 	}
@@ -428,9 +428,9 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testThePlanNamesTheAccountZoneAndReadsAZonelessEventInIt(): void {
 		$this->seedEvent();
 		$args = ['calendar' => self::PERSONAL, 'uid' => 'event', 'start' => '2026-10-01T12:30:00Z', 'end' => '2026-10-01T13:30:00Z'];
-		$plan = self::json($this->registry->call('calendar_update_event', $args, 'alice'));
+		$plan = self::json($this->registry->call('calendar_update_event', $args + ['confirm' => false], 'alice'));
 		self::assertSame('America/Sao_Paulo', $plan['timezone']);
-		$text = $this->registry->call('calendar_update_event', $args, 'alice')['content'][0]['text'];
+		$text = $this->registry->call('calendar_update_event', $args + ['confirm' => false], 'alice')['content'][0]['text'];
 		self::assertStringContainsString('09:00–10:00 → qui, 1 de out. de 2026, 09:30–10:30', $text);
 		self::assertStringNotContainsString('12:00', $text);
 	}
@@ -438,7 +438,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	/** The collision warning of an event without a zone is written in the zone of the account too. */
 	public function testACollisionOfAZonelessEventIsWrittenInTheAccountZone(): void {
 		$this->store->addObject(1, 'dentist.ics', self::ics("UID:dentist\nSUMMARY:Dentista\nDTSTART:20261001T173000Z\nDTEND:20261001T183000Z"));
-		$plan = self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Planejamento', 'start' => '2026-10-01T14:00:00-03:00', 'end' => '2026-10-01T15:00:00-03:00'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_create_event', ['calendar' => self::PERSONAL, 'summary' => 'Planejamento', 'start' => '2026-10-01T14:00:00-03:00', 'end' => '2026-10-01T15:00:00-03:00'] + ['confirm' => false], 'alice'));
 		self::assertSame([['type' => 'collision', 'message' => 'Sobrepõe Dentista (qui, 1 de out. de 2026, 14:30–15:30)']], $plan['warnings']);
 	}
 
@@ -447,7 +447,7 @@ final class PlanWarningsTest extends CalendarTestCase {
 	public function testMoveChecksCollisionsInTheDestinationCalendar(): void {
 		$this->seedEvent();
 		$this->store->addObject(2, 'clash.ics', self::ics("UID:clash\nSUMMARY:Conflito no trabalho\nDTSTART:20261001T123000Z\nDTEND:20261001T133000Z"));
-		$plan = self::json($this->registry->call('calendar_move_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::WORK], 'alice'));
+		$plan = self::json($this->registry->call('calendar_move_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::WORK] + ['confirm' => false], 'alice'));
 		self::assertSame('collision', $plan['warnings'][0]['type']);
 		self::assertStringContainsString('Conflito no trabalho', $plan['warnings'][0]['message']);
 		self::assertArrayNotHasKey('isError', $this->registry->call('calendar_move_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::WORK, 'confirm' => true], 'alice'));
@@ -456,20 +456,20 @@ final class PlanWarningsTest extends CalendarTestCase {
 
 	public function testMoveToACalendarWithoutClashHasNoWarnings(): void {
 		$this->seedEvent();
-		$plan = self::json($this->registry->call('calendar_move_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::WORK], 'alice'));
+		$plan = self::json($this->registry->call('calendar_move_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::WORK] + ['confirm' => false], 'alice'));
 		self::assertSame([], $plan['warnings']);
 	}
 
 	public function testTransferChecksCollisionsInTheDestinationCalendar(): void {
 		$this->seedEvent();
 		$this->store->addObject(3, 'clash.ics', self::ics("UID:clash\nSUMMARY:Reunião da equipe\nDTSTART:20261001T120000Z\nDTEND:20261001T130000Z"));
-		$plan = self::json($this->registry->call('calendar_transfer_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::TEAM, 'confirm_shared' => true], 'alice'));
+		$plan = self::json($this->registry->call('calendar_transfer_event', ['calendar' => self::PERSONAL, 'uid' => 'event', 'targetCalendar' => self::TEAM, 'confirm_shared' => true] + ['confirm' => false], 'alice'));
 		self::assertStringContainsString('Reunião da equipe', $plan['warnings'][0]['message']);
 	}
 
 	public function testDeleteHasNoWarnings(): void {
 		$this->seedEvent();
-		$plan = self::json($this->registry->call('calendar_delete_event', ['calendar' => self::PERSONAL, 'uid' => 'event'], 'alice'));
+		$plan = self::json($this->registry->call('calendar_delete_event', ['calendar' => self::PERSONAL, 'uid' => 'event'] + ['confirm' => false], 'alice'));
 		self::assertArrayNotHasKey('warnings', $plan);
 		self::assertArrayNotHasKey('sharedCalendars', $plan);
 		self::assertArrayNotHasKey('suggestedCalendar', $plan);

@@ -31,6 +31,7 @@ final class ReadFileHandler implements FileTextListing {
 		private TextExtractor $extractor,
 		private OcrSupport $ocr,
 		private FileTextResult $texts,
+		private ?\OCA\Mcp\Modules\Files\Checkout\CheckoutService $checkout = null,
 	) {
 	}
 
@@ -40,7 +41,7 @@ final class ReadFileHandler implements FileTextListing {
 	 * @return array<string,mixed> unchanged tool result
 	 */
 	public function handle(array $arguments, string $userId): array {
-		return $this->context->run($userId, fn (Folder $root): array => $this->read($root, $userId, $arguments['path']));
+		return $this->context->run($userId, fn (Folder $root): array => $this->read($root, $userId, $arguments['path'], $arguments['mode'] ?? 'text'));
 	}
 
 	/**
@@ -52,11 +53,24 @@ final class ReadFileHandler implements FileTextListing {
 	 * @param string $userId authenticated actor identifier
 	 * @param string $path user-relative file path
 	 */
-	private function read(Folder $root, string $userId, string $path): array {
+	private function read(Folder $root, string $userId, string $path, string $mode = 'text'): array {
 		$path = PathGuard::normalize($path);
 		$file = $this->readable->get($root, $path);
 		$meta = ['path' => $path, 'etag' => (string)$file->getEtag(), 'size' => (int)$file->getSize(),
 			'mime' => (string)$file->getMimetype(), 'access' => $this->accessInfo->describe($file, $userId)];
+		if ($mode === 'download') {
+			if ($this->checkout === null) {
+				throw new \OCA\Mcp\Mcp\Tools\Results\ToolFailure('Read-only download service unavailable.');
+			}
+			return \OCA\Mcp\Mcp\Tools\Results\ToolResult::json($this->checkout->issueRead($userId, $file, $path, $meta['access']));
+		}
+		if ($mode === 'metadata') {
+			if (!in_array(strtolower($meta['mime']), ['image/png', 'image/jpeg', 'image/jpg'], true)) {
+				throw new \OCA\Mcp\Mcp\Tools\Results\ToolFailure('Embedded metadata mode currently supports PNG and JPEG images.');
+			}
+			$embedded = \OCA\Mcp\Modules\Files\Images\EmbeddedImageMetadata::extract($this->extractor->read($file));
+			return \OCA\Mcp\Mcp\Tools\Results\ToolResult::json($meta + ['embedded_metadata' => $embedded]);
+		}
 		$scannable = OcrSupport::canLackText($file->getName(), (string)$file->getMimetype());
 		$isImage = $scannable && str_starts_with(strtolower((string)$file->getMimetype()), 'image/');
 		$text = $isImage ? '' : $this->extractor->readText($file);

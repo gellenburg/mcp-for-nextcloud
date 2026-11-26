@@ -29,13 +29,7 @@ use OCA\Mcp\Mcp\Tools\Results\ToolFailure;
 use OCA\Mcp\Mcp\Tools\Results\ToolResult;
 use OCA\Mcp\Mcp\Tools\Validation\ArgumentValidator;
 
-/**
- * Single policy point for tools/list and tools/call: grant and app availability are re-read on every
- * request, and no tool that changes something runs without `confirm: true`.
- *
- * The two decisions are here and not in the modules on purpose. A module that forgets the check cannot
- * write anything by accident, and a new module is gated by writing `operation: 'create'` and nothing else.
- */
+/** Central authorization and dispatch: catalog writes execute under current grants and native guards. */
 class ToolRegistry {
 	private ?ToolGuide $guide = null;
 	private ToolAccess $access;
@@ -114,7 +108,7 @@ class ToolRegistry {
 					continue;
 				}
 				if ($allowed) {
-					$tools[] = $this->present($definition);
+					$tools[] = $this->present($definition, $module instanceof PreviewsWrites);
 				}
 			}
 		}
@@ -122,10 +116,8 @@ class ToolRegistry {
 	}
 
 	/**
-	 * A write without `confirm: true` answers with its plan and never reaches the module; with it, the module
-	 * runs and every guard it holds — ACL, ETag, ownership, {@see PlanState} — is checked again at that moment. A
-	 * module that finds a state other than the one its plan showed throws {@see PlanChanged} and the answer is the
-	 * new plan, in the same envelope.
+	 * Explicit dry runs return plans; direct catalog writes prepare state internally and recheck access before execution.
+	 * A stale plan is refused, never retried automatically.
 	 *
 	 * @param string $name tool name
 	 * @param array<string, mixed> $arguments raw arguments from tools/call
@@ -168,23 +160,41 @@ class ToolRegistry {
 					$audit(RestrictedModule::DENIED);
 					break 2;
 				}
-				$published = WriteGate::publish($definition);
+				$direct = $module instanceof PreviewsWrites;
+				$published = WriteGate::publish($definition, $direct);
 				try {
 					$arguments = ArgumentValidator::validate($published['inputSchema'], $arguments);
 				} catch (InvalidArgumentException $e) {
 					$audit(RestrictedModule::INVALID);
 					throw $e;
 				}
+				$directRequest = $direct && WriteGate::isWrite($definition) && !array_key_exists(WriteGate::CONFIRM, $arguments);
 				try {
 					if (WriteGate::isWrite($definition) && !WriteGate::confirmed($arguments)) {
-						$plan = WriteGate::plan($module, $definition, $arguments, $userId);
-						return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
+						$previewArguments = $arguments;
+						if ($directRequest) {
+							unset($previewArguments['file_state'], $previewArguments['plan_state']);
+						}
+						$plan = WriteGate::plan($module, $definition, $previewArguments, $userId);
+						if (!$directRequest) {
+							return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
+						}
+						$arguments = ArgumentValidator::validate($published['inputSchema'],
+							WriteGate::directArguments($published, $arguments, $plan));
+						if (!self::permits($module, $userId) || !$this->access->allowed($definition, $userId)) {
+							$audit(RestrictedModule::DENIED);
+							return ToolResult::error(Translator::t('No access to this resource in Nextcloud.'));
+						}
 					}
 					$result = $module->call($name, $arguments, $userId);
 				} catch (InvalidArgumentException $e) {
 					$audit(RestrictedModule::INVALID);
 					throw $e;
 				} catch (PlanChanged $e) {
+					if ($directRequest) {
+						return ToolResult::structured('The resource changed during preparation. Nothing was written; read the latest state before retrying.',
+							['conflict' => true, 'requiresConfirmation' => false, 'plan' => $e->plan]) + ['isError' => true];
+					}
 					// Nothing was written: the person approved another state, so the answer is the new plan to approve.
 					$plan = WriteGate::envelope($definition, $e->plan);
 					return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
@@ -250,8 +260,8 @@ class ToolRegistry {
 	 * @param array<string, mixed> $definition a tool definition of a module, or of the guide itself
 	 * @return array{name:string, title:string, description:string, inputSchema:array<string, mixed>, annotations:array<string, bool|string>, module:string, operation:string, app?:string, apps?:list<string>, grantAnyOf?:list<string>}
 	 */
-	private function present(array $definition): array {
-		$definition = WriteGate::publish($definition);
+	private function present(array $definition, bool $direct = false): array {
+		$definition = WriteGate::publish($definition, $direct);
 		return [
 			'name' => $definition['name'],
 			'title' => ToolPresentation::title($definition['name']),
