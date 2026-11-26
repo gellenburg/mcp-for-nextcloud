@@ -107,7 +107,7 @@ final class EmbeddedImageMetadata {
 	private static function xmp(string $xml, array &$out): void {
 		if (strlen($xml) > self::MAX_PACKET || stripos($xml, '<!DOCTYPE') !== false || stripos($xml, '<!ENTITY') !== false || !class_exists(\DOMDocument::class)) { return; }
 		$doc = new \DOMDocument();
-		if (!@$doc->loadXML($xml, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING)) { return; }
+		if (!@$doc->loadXML($xml, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING) || $doc->doctype !== null) { return; }
 		$xpath = new \DOMXPath($doc);
 		$xpath->registerNamespace('dc', 'http://purl.org/dc/elements/1.1/');
 		$xpath->registerNamespace('photoshop', 'http://ns.adobe.com/photoshop/1.0/');

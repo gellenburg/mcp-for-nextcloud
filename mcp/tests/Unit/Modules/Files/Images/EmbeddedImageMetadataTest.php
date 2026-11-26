@@ -34,6 +34,14 @@ final class EmbeddedImageMetadataTest extends TestCase {
 		self::assertSame(['EXIF:ImageDescription' => 'Android'], EmbeddedImageMetadata::extract($jpeg));
 	}
 
+	/** A differently encoded DTD must not bypass the XML declaration rejection. */
+	public function testUtf16DoctypeIsRejected(): void {
+		$xml = '<?xml version="1.0" encoding="UTF-16"?><!DOCTYPE rdf:RDF [<!ENTITY secret "not metadata">]><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/"><rdf:Description><dc:description>&secret;</dc:description></rdf:Description></rdf:RDF>';
+		$packet = "\xff\xfe" . mb_convert_encoding($xml, 'UTF-16LE', 'UTF-8');
+		$png = "\x89PNG\r\n\x1a\n" . self::chunk('iTXt', "XML:com.adobe.xmp\0\0\0\0\0" . $packet);
+		self::assertSame([], EmbeddedImageMetadata::extract($png));
+	}
+
 	public function testMalformedChunksAndXmlEntitiesAreNotRead(): void {
 		$xml = '<!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]><x>&e;</x>';
 		$png = "\x89PNG\r\n\x1a\n" . self::chunk('iTXt', "XML:com.adobe.xmp\0\0\0\0\0" . $xml)

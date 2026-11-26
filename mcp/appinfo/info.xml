@@ -9,7 +9,7 @@
     <description><![CDATA[
 ## Fork 1.4.1 (development)
 
-- Catalog writes execute directly under existing grants and native resource permissions. Explicit dry runs remain available.
+- Catalog writes execute directly under existing grants and native resource permissions. Explicit dry runs remain available; the server validates signed `plan_state` receipts internally.
 - Read-only original file downloads and embedded PNG/JPEG metadata extraction.
 - This is a separately maintained fork; upstream version 1.4.0 notes follow.
 

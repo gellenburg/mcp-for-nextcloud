@@ -33,7 +33,7 @@ final class FileWriteCheckoutTest extends IntegrationTestCase {
 		foreach ([GrantPolicy::SERVICE_KEY, FileWritePolicy::KEY] as $key) {
 			$this->before[$key] = $apps->hasKey('mcp', $key, null) ? $apps->getValueString('mcp', $key, '', false) : null;
 		}
-		foreach ([GrantPolicy::ELIGIBLE_KEY, GrantPolicy::CONNECTED_KEY, 'grant_files_create', 'grant_files_edit'] as $key) {
+		foreach ([GrantPolicy::ELIGIBLE_KEY, GrantPolicy::CONNECTED_KEY, 'grant_files_create', 'grant_files_edit', 'grant_files_read'] as $key) {
 			$this->before[$key] = $users->hasKey(Fixtures::ALICE, 'mcp', $key) ? $users->getValueString(Fixtures::ALICE, 'mcp', $key) : null;
 		}
 		$policy = Server::get(GrantPolicy::class);
@@ -54,7 +54,7 @@ final class FileWriteCheckoutTest extends IntegrationTestCase {
 		foreach ([GrantPolicy::SERVICE_KEY, FileWritePolicy::KEY] as $key) {
 			$this->before[$key] === null ? $config->deleteAppValue('mcp', $key) : $config->setAppValue('mcp', $key, $this->before[$key]);
 		}
-		foreach ([GrantPolicy::ELIGIBLE_KEY, GrantPolicy::CONNECTED_KEY, 'grant_files_create', 'grant_files_edit'] as $key) {
+		foreach ([GrantPolicy::ELIGIBLE_KEY, GrantPolicy::CONNECTED_KEY, 'grant_files_create', 'grant_files_edit', 'grant_files_read'] as $key) {
 			$this->before[$key] === null ? $config->deleteUserValue(Fixtures::ALICE, 'mcp', $key) : $config->setUserValue(Fixtures::ALICE, 'mcp', $key, $this->before[$key]);
 		}
 		Server::get(IAppConfig::class)->clearCache(false);
@@ -91,6 +91,46 @@ final class FileWriteCheckoutTest extends IntegrationTestCase {
 	 */
 	private function upload(string $method, string $url, string $bytes): int {
 		return Http::request($method, $url, ['Content-Type: application/octet-stream'], $bytes)['status'];
+	}
+
+	/** The read grant alone permits original bytes and embedded metadata; never an upload capability. */
+	public function testReadOnlyDownloadAndEmbeddedMetadata(): void {
+		$policy = Server::get(GrantPolicy::class);
+		$policy->setGrant(Fixtures::ALICE, 'files', 'edit', false);
+		$policy->setGrant(Fixtures::ALICE, 'files', 'create', false);
+		$policy->setGrant(Fixtures::ALICE, 'files', 'read', true);
+		$base = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/X7cAAAAASUVORK5CYII=', true);
+		$text = "Description\0Android assembly plate";
+		$chunk = pack('N', strlen($text)) . 'tEXt' . $text . hash('crc32b', 'tEXt' . $text, true);
+		$bytes = substr($base, 0, -12) . $chunk . substr($base, -12);
+		$name = 'described.png';
+		$this->folder->newFile($name, $bytes);
+		$args = ['path' => $this->path($name)];
+		foreach (['basic', 'bearer'] as $kind) {
+			$client = new McpClient($kind === 'basic' ? LoginFactory::basic(Fixtures::ALICE) : LoginFactory::bearer(Fixtures::ALICE));
+			$meta = $client->rawTool('files_read', $args + ['mode' => 'metadata']);
+			self::assertTrue($meta->ok(), 'Metadata read must succeed');
+			self::assertSame('Android assembly plate', $meta->json()['embedded_metadata']['PNG:Description']);
+			$read = $client->rawTool('files_read', $args + ['mode' => 'download']);
+			self::assertTrue($read->ok(), 'Read-only capability issuance must succeed');
+			$data = $read->json();
+			self::assertArrayNotHasKey('upload_url', $data);
+			$url = Http::BASE . parse_url($data['download_url'], PHP_URL_PATH);
+			$write = Http::request('PUT', $url, ['Content-Type: application/octet-stream'], 'not permitted');
+			self::assertSame(404, $write['status']);
+			self::assertSame($bytes, $this->folder->get($name)->getContent());
+			$policy->setGrant(Fixtures::ALICE, 'files', 'read', false);
+			try {
+				self::assertSame(403, Http::request('GET', $url)['status']);
+				self::assertFalse($client->rawTool('files_read', $args + ['mode' => 'metadata'])->ok());
+			} finally {
+				$policy->setGrant(Fixtures::ALICE, 'files', 'read', true);
+			}
+			$download = Http::request('GET', $url);
+			self::assertSame(200, $download['status']);
+			self::assertSame($bytes, $download['body']);
+			self::assertSame(410, Http::request('GET', $url)['status']);
+		}
 	}
 
 	/** PUT/POST create and checkout links minted before allowlist activation refuse without effects or spend. */
