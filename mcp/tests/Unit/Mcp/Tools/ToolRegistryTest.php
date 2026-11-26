@@ -101,6 +101,7 @@ final class ToolRegistryTest extends TestCase {
 		$module = new class implements ToolModule, \OCA\Mcp\Mcp\Tools\PreviewsWrites {
 			public array $calls = [];
 			public bool $shared = false;
+			public bool $conflict = false;
 			public function definitions(): array {
 				return [['name' => 'files_checkout', 'description' => 'Checkout', 'module' => 'files', 'operation' => 'edit',
 					'inputSchema' => ['type' => 'object', 'properties' => ['path' => ['type' => 'string'], 'etag' => ['type' => 'string'], 'confirm_shared' => ['type' => 'boolean', 'default' => false], 'plan_state' => ['type' => 'string']], 'required' => ['path']]]];
@@ -110,6 +111,9 @@ final class ToolRegistryTest extends TestCase {
 			}
 			public function call(string $name, array $arguments, string $userId): array {
 				$this->calls[] = $arguments;
+				if ($this->conflict) {
+					throw new \OCA\Mcp\Mcp\Confirmation\PlanChanged(['plan_state' => 'changed']);
+				}
 				return ToolResult::json(['executed' => true]);
 			}
 		};
@@ -125,6 +129,17 @@ final class ToolRegistryTest extends TestCase {
 		self::assertArrayNotHasKey('isError', $result);
 		self::assertCount(2, $module->calls);
 		self::assertTrue($module->calls[1]['confirm_shared']);
+		$registry->call('files_checkout', ['path' => '/test.png', 'etag' => 'caller-revision', 'confirm_shared' => false], 'alice');
+		self::assertSame('caller-revision', $module->calls[2]['etag']);
+		self::assertFalse($module->calls[2]['confirm_shared']);
+		$module->conflict = true;
+		$result = $registry->call('files_checkout', ['path' => '/test.png'], 'alice');
+		self::assertTrue($result['isError']);
+		self::assertFalse($result['structuredContent']['requiresConfirmation']);
+		self::assertCount(4, $module->calls, 'conflicts must not retry the mutation');
+		$this->policy->setGrant('alice', 'files', 'edit', false);
+		$this->expectException(\OCA\Mcp\Mcp\Tools\UnknownToolException::class);
+		$registry->call('files_checkout', ['path' => '/test.png'], 'alice');
 	}
 
 	/** Every registered write gets the same readable envelope, regardless of module preview support. */

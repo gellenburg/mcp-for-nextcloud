@@ -176,7 +176,7 @@ final class WriteGateContractTest extends TestCase {
 				$this->assertArrayHasKey(WriteGate::CONFIRM, $properties, "$name must have 'confirm' in properties");
 				$confirm = $properties[WriteGate::CONFIRM];
 				$this->assertSame('boolean', $confirm['type'], "$name: confirm must be boolean");
-				$this->assertSame(CommonMessages::confirmParameter(), $confirm['description'], "$name: confirm must have standard message");
+				$this->assertSame(WriteGate::directConfirmProperty(), $confirm, "$name: catalog writes must describe optional dry runs");
 				$this->assertArrayNotHasKey('const', $confirm, "$name: confirm must not have const");
 				$this->assertNotContains(WriteGate::CONFIRM, $listedTool['inputSchema']['required'] ?? [], "$name: confirm must never be required");
 
@@ -226,7 +226,7 @@ final class WriteGateContractTest extends TestCase {
 		}
 	}
 
-	public function testCallingEveryWritingToolWithoutConfirmNeverExecutesAndReturnsRequiresConfirmation(): void {
+	public function testEveryWritingToolSupportsExplicitDryRunAndDirectExecution(): void {
 		foreach (Application::MODULES as $moduleClass) {
 			$realModule = $this->build($moduleClass);
 			$this->assertInstanceOf(ToolModule::class, $realModule);
@@ -246,7 +246,7 @@ final class WriteGateContractTest extends TestCase {
 						public function definitions(): array { return $this->inner->definitions(); }
 						public function call(string $name, array $arguments, string $userId): array {
 							$this->called = true;
-							return $this->inner->call($name, $arguments, $userId);
+							return ToolResult::json(['executed' => true]);
 						}
 						public function preview(string $name, array $arguments, string $userId): array {
 							/** @var PreviewsWrites $inner */
@@ -273,9 +273,9 @@ final class WriteGateContractTest extends TestCase {
 				$published = WriteGate::publish($definition);
 				$dummyArgs = $this->dummyArguments($published['inputSchema']);
 
-				// Call without confirm
-				$result = $registry->call($name, $dummyArgs, 'alice');
-				$this->assertFalse($calledSpy, "Tool $name must NOT invoke module call() without confirm: true");
+				// Explicit dry run is still read-only.
+				$result = $registry->call($name, $dummyArgs + ['confirm' => false], 'alice');
+				$this->assertFalse($calledSpy, "Tool $name must not execute a dry run");
 				$this->assertArrayNotHasKey('isError', $result, "Tool $name plan must not be an error");
 
 				$body = $result['structuredContent'];
@@ -283,11 +283,12 @@ final class WriteGateContractTest extends TestCase {
 				$this->assertTrue($body['requiresConfirmation'] ?? false, "Tool $name response must contain requiresConfirmation: true");
 				$this->assertSame($name, $body['tool'] ?? $body['action'] ?? null, "Tool $name response must identify the tool");
 
-				// Call with confirm => false
-				$resultFalse = $registry->call($name, $dummyArgs + ['confirm' => false], 'alice');
-				$this->assertFalse($calledSpy, "Tool $name must NOT invoke module call() with confirm: false");
-				$bodyFalse = $resultFalse['structuredContent'];
-				$this->assertTrue($bodyFalse['requiresConfirmation'] ?? false, "Tool $name response with confirm: false must contain requiresConfirmation: true");
+				// Direct catalog invocation reaches the execution handler after a preview.
+				if ($spyModule instanceof PreviewsWrites) {
+					$resultDirect = $registry->call($name, $dummyArgs, 'alice');
+					$this->assertTrue($calledSpy, "Tool $name must execute directly");
+					$this->assertSame(['executed' => true], json_decode($resultDirect['content'][0]['text'], true));
+				}
 			}
 		}
 	}

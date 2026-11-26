@@ -271,9 +271,9 @@ final class ToolGuideTest extends TestCase {
 		$instructions = ToolPresentation::INSTRUCTIONS;
 
 		$this->assertStringContainsString('"Tool guide"', $instructions);
-		$this->assertStringContainsString('confirm=true', $instructions);
-		$this->assertStringContainsString('ask whether they really want it done', $instructions);
-		$this->assertStringContainsString('never invent an approval_id', $instructions);
+		$this->assertStringContainsString('confirm=false', $instructions);
+		$this->assertStringContainsString('existing grants and native', $instructions);
+		$this->assertStringContainsString('Never invent a state token', $instructions);
 	}
 
 	/** The guide is written for the model, so it stays in English and asks to be relayed. */

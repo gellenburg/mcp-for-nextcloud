@@ -106,6 +106,10 @@ Claude (claude.ai and Claude Desktop), ChatGPT and Gemini CLI sign in with OAuth
 Nextcloud 32–35 and PHP 8.2 or later; 1.4.0 is supported and tested on Nextcloud 34 and 35, and nothing new targets 32 or 33. Mail 5.0.0+ (attachment text 5.10.11+), Tables 1.0.0+, Forms 5.3.0+ and Polls 8.6.3+ are optional. Deck and Talk are optional: their tools appear only when the app is enabled in a supported version.
     ]]></description>
     <description lang="pt-br"><![CDATA[
+## Fork 1.4.1 (desenvolvimento)
+
+Execução direta sob as permissões existentes; downloads somente leitura e metadados de imagens PNG/JPEG. Versão derivada da versão 1.4.0 original.
+
 ## Novidades da 1.4.0
 
 - **Rotinas:** com uma confirmação, `routines_create_meeting` cria uma sala privada do Talk, publica a pauta e cria o evento no calendário com o link da sala; `routines_create_mail_card` salva um anexo de e-mail como arquivo novo e cria um cartão do Deck que o referencia. `routines_prepare_meeting` é somente leitura e não pede confirmação: monta um dossiê de um evento que você já vê. Uma rotina de escrita para no primeiro passo que falha ou fica incerto e mantém o que foi criado: sem desfazer, sem nova tentativa e sem garantia de entrega de convites. A rotina do cartão nunca compartilha o arquivo salvo com o quadro, porque essa divulgação precisa de decisão própria.
@@ -199,6 +203,10 @@ O Claude (claude.ai e Claude Desktop), o ChatGPT e o Gemini CLI entram com OAuth
 Nextcloud 32–35 e PHP 8.2 ou superior; a 1.4.0 é suportada e testada no Nextcloud 34 e 35, e nada novo visa o 32 ou o 33. Mail 5.0.0+ (texto de anexos 5.10.11+), Tables 1.0.0+, Forms 5.3.0+ e Polls 8.6.3+ são opcionais. O Deck e o Talk são opcionais: as ferramentas deles só aparecem com o app ativo numa versão suportada.
     ]]></description>
     <description lang="es"><![CDATA[
+## Fork 1.4.1 (desarrollo)
+
+Ejecución directa con los permisos existentes; descargas de solo lectura y metadatos PNG/JPEG. Derivada de la versión original 1.4.0.
+
 ## Novedades de la 1.4.0
 
 - **Rutinas:** con una confirmación, `routines_create_meeting` crea una sala privada de Talk, publica la agenda y crea el evento del calendario con el enlace de la sala; `routines_create_mail_card` guarda un adjunto de correo como archivo nuevo y crea una tarjeta de Deck que lo referencia. `routines_prepare_meeting` es de solo lectura y no pide confirmación: prepara un dosier de un evento que ya puedes ver. Una rutina de escritura se detiene en el primer paso que falla o queda incierto y conserva lo creado: sin deshacer, sin reintentos y sin garantía de entrega de invitaciones. La rutina de la tarjeta nunca comparte el archivo guardado con el tablero, porque esa divulgación necesita su propia decisión.
@@ -292,6 +300,10 @@ Claude (claude.ai y Claude Desktop), ChatGPT y Gemini CLI inician sesión con OA
 Nextcloud 32–35 y PHP 8.2 o superior; la 1.4.0 es compatible y probada en Nextcloud 34 y 35, y nada nuevo apunta a 32 o 33. Mail 5.0.0+ (texto de adjuntos 5.10.11+), Tables 1.0.0+, Forms 5.3.0+ y Polls 8.6.3+ son opcionales. Deck y Talk son opcionales: sus herramientas solo aparecen con la aplicación activa en una versión compatible.
     ]]></description>
     <description lang="de"><![CDATA[
+## Fork 1.4.1 (Entwicklung)
+
+Direkte Ausführung mit bestehenden Berechtigungen, schreibgeschützte Downloads und eingebettete PNG/JPEG-Metadaten. Basiert auf der ursprünglichen Version 1.4.0.
+
 ## Neu in 1.4.0
 
 - **Routinen:** Nach einer Bestätigung erstellt `routines_create_meeting` einen privaten Talk-Raum, veröffentlicht die Agenda und legt den Kalendertermin mit dem Raumlink an; `routines_create_mail_card` speichert einen E-Mail-Anhang als neue Datei und erstellt eine Deck-Karte, die darauf verweist. `routines_prepare_meeting` ist schreibgeschützt und braucht keine Bestätigung: Es erstellt ein Dossier zu einem Termin, den du sehen kannst. Eine schreibende Routine stoppt beim ersten fehlgeschlagenen oder unsicheren Schritt und behält, was erstellt wurde: kein Zurücksetzen, keine Wiederholung und keine Zusage, dass Einladungen zugestellt werden. Die Karten-Routine teilt die gespeicherte Datei nie mit dem Board, weil diese Offenlegung eine eigene Entscheidung braucht.
