@@ -190,7 +190,7 @@ class ToolRegistry {
 							return ToolResult::structured(PlanRenderer::render($module, $name, $plan), $plan);
 						}
 						$arguments[WriteGate::CONFIRM] = true;
-						if ($name === 'files_checkout' && !isset($arguments['etag']) && isset($plan['etag'])) {
+						if (isset($published['inputSchema']['properties']['etag']) && !isset($arguments['etag']) && is_string($plan['etag'] ?? null)) {
 							$arguments['etag'] = $plan['etag'];
 						}
 						$arguments = ArgumentValidator::validate($published['inputSchema'], $arguments);
