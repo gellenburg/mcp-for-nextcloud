@@ -264,7 +264,7 @@ final class ToolGuide {
 	 */
 	private function gates(array $definition): array {
 		$gates = [];
-		if ($definition['operation'] !== 'read') {
+		if ($definition['operation'] !== 'read' && !\OCA\Mcp\Mcp\Confirmation\WriteGate::supportsDirectExecution($definition['name'])) {
 			$gates[] = ['name' => 'confirm', 'summary' => 'boolean, must be true'];
 		}
 		$properties = $definition['inputSchema']['properties'] ?? [];
