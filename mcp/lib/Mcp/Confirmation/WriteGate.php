@@ -32,7 +32,7 @@ final class WriteGate {
 	private const READ_OPERATION = 'read';
 	private const DIRECT_TOOLS = [
 		'files_checkout', 'files_move_batch', 'files_create', 'files_edit', 'files_replace',
-		'files_mkdir', 'files_move', 'files_copy', 'files_upload',
+		'files_mkdir', 'files_move', 'files_copy', 'files_upload', 'files_delete', 'files_version_restore', 'files_undo_batch',
 	];
 
 	public static function supportsDirectExecution(string $name): bool {
