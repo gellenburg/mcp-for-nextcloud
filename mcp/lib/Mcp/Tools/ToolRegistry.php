@@ -182,7 +182,8 @@ class ToolRegistry {
 						// confirm=false still requests a dry run. Shared-resource approval
 						// and all native permission checks remain in force.
 						$direct = !array_key_exists(WriteGate::CONFIRM, $arguments)
-							&& in_array($name, ['files_checkout', 'files_move_batch'], true)
+							&& WriteGate::supportsDirectExecution($name)
+							&& $module instanceof PreviewsWrites
 							&& ($plan['requiresSharedConfirmation'] ?? false) !== true
 							&& empty($plan['shared']);
 						if (!$direct) {
