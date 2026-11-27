@@ -52,4 +52,20 @@ final class FilesReadUtf8Test extends FilesToolsTestCase {
 		$this->assertSame($latin . "\n" . $latin, $extractor->extractBytes(BrokenTextSamples::docx(), 'v.docx', ''));
 		$this->assertSame($latin, $extractor->extractBytes(BrokenTextSamples::odt(), 'v.odt', ''));
 	}
+
+	public function testPlainTextWithAnUnknownExtensionOrNoExtensionIsReadable(): void {
+		foreach (['project.skribisto', 'README', '.custom', 'chapter.md,v'] as $name) {
+			$path = '/Documentos/' . $name;
+			$this->tree->addFile('/alice/files' . $path, "Unknown extension, valid text.\n", 'application/octet-stream');
+			$result = $this->tool('files_read', ['path' => $path]);
+			$this->assertSame("Unknown extension, valid text.\n", $result['content'][0]['text']);
+		}
+	}
+
+	public function testUnknownBinaryIsNotMistakenForText(): void {
+		$extractor = new TextExtractor($this->temp, new FileReadLimit($this->config->mock($this)));
+		$this->expectException(\OCA\Mcp\Mcp\Tools\Results\ToolFailure::class);
+		$extractor->extractBytes("PK\x00\xff", 'file.custom', 'application/octet-stream');
+	}
+
 }

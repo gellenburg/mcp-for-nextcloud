@@ -291,13 +291,8 @@ final class FileCreation {
 	 * @throws ToolFailure for a content over the limit, and as {@see self::target()}
 	 */
 	private function textTarget(Folder $root, string $path, string $content): array {
-		$extension = strtolower(pathinfo(PathGuard::normalize($path), PATHINFO_EXTENSION));
-		if (!in_array($extension, self::TEXT_EXTENSIONS, true)) {
-			throw new ArgumentValidationException('Invalid argument: path', 'path', \OCA\Mcp\Modules\Files\Presentation\CreationMessages::createExtensionRule());
-		}
-		if (strlen($content) > self::MAX_INLINE_BYTES) {
-			throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\CreationMessages::createTooLarge(self::MAX_INLINE_BYTES));
-		}
+		// The JSON content is text, but its destination may have any native-valid name.
+		// Filename validation, scope, collision and native quota checks remain in target()/write().
 		return $this->target($root, $path);
 	}
 

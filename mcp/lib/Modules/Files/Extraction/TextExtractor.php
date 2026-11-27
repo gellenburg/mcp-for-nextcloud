@@ -49,7 +49,23 @@ class TextExtractor {
 	 * @return bool whether the file is plain text (and therefore readable as-is and editable)
 	 */
 	public static function isText(File $file): bool {
-		return self::isTextNamed($file->getName(), (string)$file->getMimetype());
+		$name = $file->getName();
+		$mime = (string)$file->getMimetype();
+		if (self::isTextNamed($name, $mime)) {
+			return true;
+		}
+		// Recognised document containers need their dedicated parser; do not edit them as text.
+		if (self::canExtract($name, $mime)) {
+			return false;
+		}
+		// A MIME/extension registry miss is not a file-type denial.
+		return self::isPlainTextBytes((string)$file->getContent());
+	}
+
+	/** Recognises arbitrary-extension ASCII/UTF-8 text without treating opaque binary bytes as editable text. */
+	public static function isPlainTextBytes(string $bytes): bool {
+		return mb_check_encoding($bytes, 'UTF-8')
+			&& preg_match('/[\x00-\x08\x0E-\x1F\x7F]/', $bytes) === 0;
 	}
 
 	/**
@@ -151,7 +167,7 @@ class TextExtractor {
 		if ($mime === self::ODT || $extension === 'odt') {
 			return $this->guarded($name, fn () => $this->zipXml($bytes, 'content.xml', ['#</text:(p|h)>#' => "\n", '#<text:tab\s*/>#' => "\t", '#<text:line-break\s*/>#' => "\n", '#<text:s\s*/>#' => ' ']));
 		}
-		if (self::isTextNamed($name, $mime)) {
+		if (self::isTextNamed($name, $mime) || self::isPlainTextBytes($bytes)) {
 			$text = mb_scrub($bytes, 'UTF-8');
 			return str_starts_with($text, "\u{FEFF}") ? substr($text, 3) : $text;
 		}
