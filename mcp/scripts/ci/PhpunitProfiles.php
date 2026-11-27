@@ -102,6 +102,11 @@ final class PhpunitProfiles {
 			$command = [PHP_BINARY, '-d', 'post_max_size=' . $limit, '-d', 'upload_max_filesize=' . $limit, $app . '/vendor/bin/phpunit',
 				'-c', $work . '/phpunit.xml', '--do-not-cache-result'];
 		}
+		// The supported profile previously stopped without identifying the last running test.
+		// Keep the same inventory and JUnit coverage; expose PHPUnit's per-test events in CI logs.
+		if ($profile === 'supported') {
+			$command[] = '--debug';
+		}
 		return self::execute([...$command, '--filter', $filter,
 			'--log-junit', $work . '/' . $profile . '.xml'], $environment);
 	}
