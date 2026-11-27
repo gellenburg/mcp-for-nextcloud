@@ -63,7 +63,7 @@ final class CopyMoveFilePolicyTest extends ExclusionTestCase {
 			$id = (int)$this->node(self::ALICE, $args['from'])->getId();
 			$plan = $this->client->tool($tool, $args);
 			self::assertTrue($plan->ok(), $plan->describe());
-			self::assertTrue($plan->json()['requiresConfirmation'] ?? false, $plan->describe());
+			self::assertTrue($plan->structured()['requiresConfirmation'] ?? false, $plan->describe());
 			self::assertFalse($this->exists(self::ALICE, $args['to']));
 			self::assertSame('original', $this->node(self::ALICE, $args['from'])->getContent());
 			$reply = $this->client->write($tool, $args);
