@@ -68,4 +68,13 @@ final class FilesReadUtf8Test extends FilesToolsTestCase {
 		$extractor->extractBytes("PK\x00\xff", 'file.custom', 'application/octet-stream');
 	}
 
+
+	public function testPdfExtractionRequiresPdfExtensionCaseInsensitively(): void {
+		$extractor = new TextExtractor($this->temp, new FileReadLimit($this->config->mock($this)));
+		$this->assertSame(BrokenTextSamples::PDF_TEXT, $extractor->extractBytes(BrokenTextSamples::pdf(), 'v.PDF', 'application/octet-stream'));
+		$this->assertFalse(TextExtractor::canExtract('project.custom', 'application/pdf'));
+		$this->assertSame("ordinary text\n", $extractor->extractBytes("ordinary text\n", 'project.custom', 'application/pdf'));
+		$this->assertFalse(\OCA\Mcp\Modules\Files\Images\OcrSupport::canLackText('project.custom', 'application/pdf'));
+	}
+
 }

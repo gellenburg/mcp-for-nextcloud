@@ -70,8 +70,8 @@ class McpController extends Controller {
 					return new McpResponse('', 406);
 				}
 				$raw = $this->readBody();
-				if (!is_string($raw) || strlen($raw) > 1048576) {
-					return new McpResponse('', 413);
+				if (!is_string($raw)) {
+					return new McpResponse('', 400);
 				}
 				$result = $this->protocol->handle($raw, $this->request->getHeader('MCP-Protocol-Version'), $user->getUID(), [
 					'method' => $this->request->getHeader('Mcp-Method'),
@@ -112,10 +112,10 @@ class McpController extends Controller {
 	/**
 	 * IRequest does not expose the raw body; php://input stays readable after Nextcloud parsed JSON params.
 	 *
-	 * @return string|false at most 1 MiB + 1 byte of the body, false when unreadable
+	 * @return string|false raw body admitted by the native server, false when unreadable
 	 */
 	protected function readBody(): string|false {
-		return file_get_contents('php://input', false, null, 0, 1048577);
+		return file_get_contents('php://input');
 	}
 
 	/**

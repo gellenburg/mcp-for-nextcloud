@@ -37,7 +37,7 @@ class OcrSupport {
 	public static function canLackText(string $name, string $mime): bool {
 		$mime = strtolower($mime);
 		$extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-		return $mime === 'application/pdf' || $extension === 'pdf'
+		return $extension === 'pdf'
 			|| (str_starts_with($mime, 'image/') && $mime !== 'image/svg+xml' && $extension !== 'svg');
 	}
 

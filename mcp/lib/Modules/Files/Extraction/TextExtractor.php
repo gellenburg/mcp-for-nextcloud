@@ -51,6 +51,9 @@ class TextExtractor {
 	public static function isText(File $file): bool {
 		$name = $file->getName();
 		$mime = (string)$file->getMimetype();
+		if (strtolower(pathinfo($name, PATHINFO_EXTENSION)) === 'pdf' || strtolower($mime) === 'application/pdf') {
+			return false;
+		}
 		if (self::isTextNamed($name, $mime)) {
 			return true;
 		}
@@ -87,7 +90,7 @@ class TextExtractor {
 	public static function canExtract(string $name, string $mime): bool {
 		$mime = strtolower($mime);
 		$extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-		return $mime === 'application/pdf' || $extension === 'pdf'
+		return $extension === 'pdf'
 			|| $mime === self::DOCX || $extension === 'docx'
 			|| $mime === self::ODT || $extension === 'odt'
 			|| self::isTextNamed($name, $mime);
@@ -101,7 +104,7 @@ class TextExtractor {
 	public static function textMime(string $name, string $mime): string {
 		$lowerMime = strtolower($mime);
 		$extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-		if ($lowerMime === 'application/pdf' || $extension === 'pdf'
+		if ($extension === 'pdf'
 			|| $lowerMime === self::DOCX || $extension === 'docx'
 			|| $lowerMime === self::ODT || $extension === 'odt') {
 			return 'text/plain';
@@ -158,7 +161,7 @@ class TextExtractor {
 		$limit ??= $this->maxFileBytes();
 		$mime = strtolower($mime);
 		$extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-		if ($mime === 'application/pdf' || $extension === 'pdf') {
+		if ($extension === 'pdf') {
 			return $this->guarded($name, fn () => $this->pdf($bytes, $limit));
 		}
 		if ($mime === self::DOCX || $extension === 'docx') {
