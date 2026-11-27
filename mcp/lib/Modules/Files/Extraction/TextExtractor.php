@@ -16,7 +16,7 @@ use OCP\Files\File;
 use OCP\ITempManager;
 use Smalot\PdfParser\Config;
 
-/** Reads a file within a byte limit and turns text, PDF, DOCX and ODT into plain text. */
+/** Reads files and extracts text without imposing an independent source-file byte quota. */
 class TextExtractor {
 	/** Default file-read ceiling when the administrator set none, in bytes. Not the zip-entry cap. */
 	public const MAX_BYTES = FileReadLimit::DEFAULT_MAX_BYTES;
@@ -258,8 +258,7 @@ class TextExtractor {
 			}
 			try {
 				$stat = $zip->statName($entry);
-				// The declared size guards against zip bombs; the read length caps a lying header.
-				// This cap stays fixed when the administrator raises the file-read ceiling.
+				// Declared size is checked against native memory, not an MCP file quota.
 				$phpMemory = $this->readLimit->phpMaxBytes();
 				$available = $phpMemory > 0 ? max(0, $phpMemory - memory_get_usage(true)) : null;
 				if ($stat === false || ($available !== null && $stat['size'] > $available)) {
@@ -270,11 +269,19 @@ class TextExtractor {
 					throw new \RuntimeException('entry unreadable');
 				}
 				try {
-					$xml = $available === null ? stream_get_contents($stream) : stream_get_contents($stream, $available + 1);
+					// Fixed-size reads avoid preallocating the entire remaining PHP memory allowance.
+					$xml = '';
+					while (!feof($stream)) {
+						$chunk = fread($stream, 65536);
+						if ($chunk === false || ($chunk === '' && !feof($stream))) {
+							throw new \RuntimeException('entry unreadable');
+						}
+						$xml .= $chunk;
+					}
 				} finally {
 					fclose($stream);
 				}
-				if ($xml === false || ($available !== null && strlen($xml) > $available)) {
+				if ($available !== null && strlen($xml) > $available) {
 					throw new \RuntimeException('entry exceeds native memory');
 				}
 			} finally {

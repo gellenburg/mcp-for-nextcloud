@@ -17,7 +17,7 @@ use OCP\Files\File;
 use OCP\ITempManager;
 use PHPUnit\Framework\TestCase;
 
-/** The file ceiling follows the administrator; a zip entry stays at 20 MiB. */
+/** Native-only reads, including document extraction above historical application ceilings. */
 final class TextExtractorLimitTest extends TestCase {
 	/**
 	 * @param int|null $mib Configured ceiling in MiB, null keeps the default.
@@ -88,6 +88,13 @@ final class TextExtractorLimitTest extends TestCase {
 		$extractor = new TextExtractor($temp, new FileReadLimit($config));
 		$pdf = \OCA\Mcp\Tests\Unit\Tools\BrokenTextSamples::pdf();
 		$this->assertNotSame('', $extractor->readText($this->file(strlen($pdf), 'a.pdf', $pdf, 'application/pdf')));
+	}
+
+	/** A large native memory allowance is not a request to allocate that much RAM. */
+	public function testSmallDocumentDoesNotAllocateTheNativeMemoryAllowance(): void {
+		$extractor = $this->extractor(null, '8G');
+		$docx = self::zip('word/document.xml', '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:t>small text</w:t></w:p></w:document>');
+		$this->assertSame('small text', $extractor->extractBytes($docx, 'small.docx', ''));
 	}
 
 	private static function zip(string $entry, string $content): string {
