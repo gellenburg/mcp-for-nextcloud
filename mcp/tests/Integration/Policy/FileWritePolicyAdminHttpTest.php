@@ -97,28 +97,31 @@ final class FileWritePolicyAdminHttpTest extends IntegrationTestCase {
 		parent::tearDown();
 	}
 
-	/** Default, canonical save, invalid input preserving data, and D9 repair through actual HTTP. */
-	public function testAdminCanSaveReadAndRecoverWithoutOcc(): void {
+	/** The legacy endpoint stays authenticated and compatible but cannot change native admission. */
+	public function testAdminEndpointKeepsNativeDefaultsAndStoredLegacyValue(): void {
 		$session = $this->session('admin');
 		$initial = $this->request('GET', $session);
 		self::assertSame(200, $initial['status'], $initial['body']);
 		self::assertSame(FileWritePolicy::defaults(), json_decode($initial['body'], true));
-		$body = ['mode' => 'allowlist', 'extensions' => ".TXT,md\n", 'allowExtensionless' => true];
+		$body = ['mode' => 'allowlist', 'extensions' => ['txt'], 'allowExtensionless' => false];
 		$saved = $this->request('PUT', $session, $body);
 		self::assertSame(200, $saved['status'], $saved['body']);
-		self::assertSame(['md', 'txt'], json_decode($saved['body'], true)['extensions']);
+		self::assertSame(FileWritePolicy::defaults(), json_decode($saved['body'], true));
 		self::assertSame($saved['body'], $this->request('GET', $session)['body']);
-		$bad = $this->request('PUT', $session, array_replace($body, ['extensions' => '*.txt']));
+		$bad = $this->request('PUT', $session, array_replace($body, ['extensions' => 7]));
 		self::assertSame(400, $bad['status'], $bad['body']);
-		self::assertSame($saved['body'], $this->request('GET', $session)['body']);
 		$config = Server::get(IAppConfig::class);
-		$config->deleteKey('mcp', FileWritePolicy::KEY);
+		$config->clearCache(false);
+		self::assertFalse($config->hasKey('mcp', FileWritePolicy::KEY, null));
 		$config->setValueInt('mcp', FileWritePolicy::KEY, 7, false);
-		self::assertSame(503, $this->request('GET', $session)['status']);
+		$current = $this->request('GET', $session);
+		self::assertSame(200, $current['status'], $current['body']);
+		self::assertSame(FileWritePolicy::defaults(), json_decode($current['body'], true));
 		$off = $this->request('PUT', $session, ['mode' => 'off', 'extensions' => [], 'allowExtensionless' => false]);
 		self::assertSame(200, $off['status'], $off['body']);
 		self::assertSame(FileWritePolicy::defaults(), json_decode($off['body'], true));
-		self::assertSame($off['body'], $this->request('GET', $session)['body']);
+		$config->clearCache(false);
+		self::assertSame(7, $config->getValueInt('mcp', FileWritePolicy::KEY, 0, false));
 	}
 
 	/** Anonymous and ordinary users cannot read or change settings; forged CSRF cannot save. */
