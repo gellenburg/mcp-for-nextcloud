@@ -105,12 +105,11 @@ final class FilesCopyMoveTest extends FilesToolsTestCase {
 		$this->assertSame([], $this->tree->ops);
 	}
 
-	public function testCopyRefusesATreeOverTheByteCeilingWithoutCopyingAnything(): void {
+	public function testCopyAllowsATreeOverFormerByteCeiling(): void {
 		$this->tree->addFile('/alice/files/Pesada/grande.bin', str_repeat('x', 16), 'application/octet-stream');
-		$this->tree->nodes['/alice/files/Pesada/grande.bin']['size'] = ReorganizationLimits::BYTES + 1;
-		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\ReorganizationMessages::copyTooLarge(ReorganizationLimits::BYTES),
-			$this->failure('files_copy', ['from' => '/Pesada', 'to' => '/Copia/Pesada']));
-		$this->assertSame([], $this->tree->ops);
+		$this->tree->nodes['/alice/files/Pesada/grande.bin']['size'] = 1073741825;
+		$this->json('files_copy', ['from' => '/Pesada', 'to' => '/Copia/Pesada']);
+		$this->assertArrayHasKey('/alice/files/Copia/Pesada/grande.bin', $this->tree->nodes);
 	}
 
 	/** The walk must stop early: a huge tree is not measured to the end just to be refused. */

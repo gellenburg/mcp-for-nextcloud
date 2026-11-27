@@ -240,21 +240,20 @@ final class FilesModuleTest extends TestCase {
 		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\ReadingMessages::notExtracted('bomb.docx'), $this->tool('files_read', ['path' => '/bomb.docx'])['content'][0]['text']);
 	}
 
-	public function testReadEnforcesByteLimitBeforeAndWhileReading(): void {
-		$this->tree->addFile('/alice/files/big.pdf', 'x', 'application/pdf', ['size' => TextExtractor::MAX_BYTES + 1]);
-		$this->assertSame(TextExtractor::tooLarge(), $this->failure('files_read', ['path' => '/big.pdf']));
-		// The size reported by the storage lies: the stream read still stops at the limit.
-		$this->tree->addFile('/alice/files/liar.txt', str_repeat('y', TextExtractor::MAX_BYTES + 1), 'text/plain', ['size' => 10]);
-		$this->assertSame(TextExtractor::tooLarge(), $this->failure('files_read', ['path' => '/liar.txt']));
+	public function testReadExceedsFormerByteLimit(): void {
+		$this->tree->addFile('/alice/files/big.txt', 'large file', 'text/plain', ['size' => TextExtractor::MAX_BYTES + 1]);
+		$this->assertSame('large file', $this->tool('files_read', ['path' => '/big.txt'])['content'][0]['text']);
 	}
 
-	public function testReadTruncatesAtCharacterLimit(): void {
-		$this->tree->addFile('/alice/files/long.txt', str_repeat('é', FilesModule::MAX_CHARS + 50));
-		$text = $this->tool('files_read', ['path' => '/long.txt'])['content'][0]['text'];
-		$this->assertStringEndsWith("
-
-" . \OCA\Mcp\Modules\Files\Presentation\ReadingMessages::textTruncated(), $text);
-		$this->assertSame(FilesModule::MAX_CHARS, mb_strlen(explode("\n\n[", $text)[0]));
+	public function testReadReturnsFullTextAndOptionalCharacterWindows(): void {
+		$body = str_repeat('é', FilesModule::MAX_CHARS + 50);
+		$this->tree->addFile('/alice/files/long.txt', $body);
+		$this->assertSame($body, $this->tool('files_read', ['path' => '/long.txt'])['content'][0]['text']);
+		$page = $this->tool('files_read', ['path' => '/long.txt', 'offset' => 10, 'max_chars' => 20]);
+		$this->assertSame(str_repeat('é', 20), $page['content'][0]['text']);
+		$meta = json_decode($page['content'][1]['text'], true, 512, JSON_THROW_ON_ERROR);
+		$this->assertSame(30, $meta['next_offset']);
+		$this->assertSame(mb_strlen($body), $meta['total_chars']);
 	}
 
 	public function testReadRejectsFoldersAndBinaries(): void {
@@ -334,12 +333,11 @@ final class FilesModuleTest extends TestCase {
 		$this->assertNotContains('write /alice/files/Documentos/ata.md', $this->tree->ops);
 	}
 
-	public function testEditRefusesStaleEtagBinariesBackupsAndOversizedContent(): void {
+	public function testEditRefusesStaleEtagBinariesAndBackups(): void {
 		$this->assertSame(CommonMessages::conflict(), $this->failure('files_edit', ['path' => '/Documentos/ata.md', 'content' => 'x', 'etag' => 'old']));
 		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\EditingMessages::notText(), $this->failure('files_edit', ['path' => '/relatorio.pdf', 'content' => 'x']));
 		$this->tree->addFile('/alice/files/MCP backups/a.txt.bak', 'b');
 		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\EditingMessages::backupPath(), $this->failure('files_edit', ['path' => '/MCP backups/a.txt.bak', 'content' => 'x']));
-		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\EditingMessages::editTooLarge(FilesModule::MAX_EDIT_BYTES), $this->failure('files_edit', ['path' => '/Documentos/ata.md', 'content' => str_repeat('x', FilesModule::MAX_EDIT_BYTES + 1)]));
 		$this->assertSame(CommonMessages::notFound(), $this->failure('files_edit', ['path' => '/novo.txt', 'content' => 'x']));
 		$this->assertSame([], $this->tree->ops);
 	}

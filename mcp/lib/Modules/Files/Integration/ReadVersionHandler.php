@@ -98,8 +98,8 @@ final class ReadVersionHandler {
 			'version' => $revision,
 			'size' => strlen($bytes),
 			'mime' => $mime,
-			'text' => mb_strlen($text) > self::MAX_CHARS ? mb_substr($text, 0, self::MAX_CHARS) . "\n\n" . ReadingMessages::textTruncated() : $text,
-			'truncated' => mb_strlen($text) > self::MAX_CHARS,
+			'text' => $text,
+			'truncated' => false,
 		];
 	}
 }

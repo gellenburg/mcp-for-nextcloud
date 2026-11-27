@@ -228,7 +228,7 @@ class ResourceRegistry {
 			$name = $node->getName();
 
 			if ($this->textExtractor->canExtract($name, $mime)) {
-				$text = $this->textExtractor->readText($node, self::MAX_TEXT_CHARS);
+				$text = $this->textExtractor->readText($node);
 				return [
 					'contents' => [
 						[
@@ -245,8 +245,7 @@ class ResourceRegistry {
 			if (mb_check_encoding($bytes, 'UTF-8') && preg_match('/[\x00-\x08\x0E-\x1F\x7F]/', $bytes) === 0) {
 				$text = str_starts_with($bytes, "\u{FEFF}") ? substr($bytes, 3) : $bytes;
 				return ['contents' => [['uri' => $uri, 'mimeType' => 'text/plain',
-					'text' => mb_strlen($text) > self::MAX_TEXT_CHARS
-						? mb_substr($text, 0, self::MAX_TEXT_CHARS) . "\n\n[content truncated]" : $text]]];
+					'text' => $text]]];
 			}
 			return [
 				'contents' => [

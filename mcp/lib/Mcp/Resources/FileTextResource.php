@@ -17,5 +17,5 @@ interface FileTextResource {
 	/** @param string $name file name @param string $mime file MIME type @return string extracted text MIME type */
 	public function textMime(string $name, string $mime): string;
 	/** @param File $file readable native file @param int $maxChars character budget @return string extracted text */
-	public function readText(File $file, int $maxChars = self::MAX_CHARS): string;
+	public function readText(File $file, int $maxChars = PHP_INT_MAX): string;
 }

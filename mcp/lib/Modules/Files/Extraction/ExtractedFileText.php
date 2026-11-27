@@ -28,5 +28,5 @@ final class ExtractedFileText implements FileTextResource {
 	 * @param File $file visible file whose text is extracted
 	 * @param int $maxChars maximum number of extracted characters
 	 */
-	public function readText(File $file, int $maxChars = self::MAX_CHARS): string { return $this->extractor->readText($file, $maxChars); }
+	public function readText(File $file, int $maxChars = PHP_INT_MAX): string { return $this->extractor->readText($file, $maxChars); }
 }

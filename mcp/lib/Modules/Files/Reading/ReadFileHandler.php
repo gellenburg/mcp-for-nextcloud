@@ -41,7 +41,7 @@ final class ReadFileHandler implements FileTextListing {
 	 * @return array<string,mixed> unchanged tool result
 	 */
 	public function handle(array $arguments, string $userId): array {
-		return $this->context->run($userId, fn (Folder $root): array => $this->read($root, $userId, $arguments['path'], $arguments['mode'] ?? 'text'));
+		return $this->context->run($userId, fn (Folder $root): array => $this->read($root, $userId, $arguments['path'], $arguments['mode'] ?? 'text', $arguments['offset'] ?? null, $arguments['max_chars'] ?? null));
 	}
 
 	/**
@@ -53,7 +53,7 @@ final class ReadFileHandler implements FileTextListing {
 	 * @param string $userId authenticated actor identifier
 	 * @param string $path user-relative file path
 	 */
-	private function read(Folder $root, string $userId, string $path, string $mode = 'text'): array {
+	private function read(Folder $root, string $userId, string $path, string $mode = 'text', ?int $offset = null, ?int $maxChars = null): array {
 		$path = PathGuard::normalize($path);
 		$file = $this->readable->get($root, $path);
 		$meta = ['path' => $path, 'etag' => (string)$file->getEtag(), 'size' => (int)$file->getSize(),
@@ -77,6 +77,16 @@ final class ReadFileHandler implements FileTextListing {
 		if ($scannable && trim($text) === '') {
 			$notice = $this->ocr->noTextNotice();
 			return $this->texts->render($notice, $meta + ['text_layer' => false, 'ocr_active' => $this->ocr->isActive(), 'notice' => $notice]);
+		}
+		// No implicit output cap. Explicit character windows are a client choice, not a file admission limit.
+		if ($offset !== null || $maxChars !== null) {
+			$total = mb_strlen($text, 'UTF-8');
+			$start = min($offset ?? 0, $total);
+			$length = min($maxChars ?? ($total - $start), $total - $start);
+			$text = mb_substr($text, $start, $length, 'UTF-8');
+			$next = $start + $length;
+			$meta += ['offset' => $start, 'returned_chars' => $length, 'total_chars' => $total,
+				'next_offset' => $next < $total ? $next : null];
 		}
 		return $this->texts->render(
 			$text,

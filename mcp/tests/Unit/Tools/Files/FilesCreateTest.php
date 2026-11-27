@@ -85,7 +85,7 @@ final class FilesCreateTest extends FilesToolsTestCase {
 		$this->assertSame('Relatório.docx', $plan['name']);
 		$this->assertSame('/Documentos', $plan['folder']);
 		$this->assertSame(2048, $plan['size']);
-		$this->assertSame(CheckoutService::DEFAULT_MAX_BYTES, $plan['uploadMaxBytes']);
+		$this->assertSame(CheckoutService::NATIVE_ONLY, $plan['uploadMaxBytes']);
 		$this->assertSame(CheckoutService::UPLOAD_TTL, $plan['uploadTtlSeconds']);
 		$this->assertFalse($plan['requiresSharedConfirmation']);
 		$this->assertTrue($plan['linksAfterConfirmation']);
@@ -188,12 +188,12 @@ final class FilesCreateTest extends FilesToolsTestCase {
 	}
 
 	/** A declared size over the limit is refused before any link exists: the upload would be a 413 anyway. */
-	public function testADeclaredSizeOverTheLimitIsRefusedInThePlanAndTheConfirmation(): void {
+	public function testLegacyUploadLimitDoesNotRestrictNativeFileSize(): void {
 		$this->config->app['mcp'][CheckoutService::MAX_BYTES_KEY] = '1000';
-		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\CheckoutMessages::uploadTooLarge(1000), $this->planFailure('files_upload', ['path' => '/novo.docx', 'size' => 1001]));
-		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\CheckoutMessages::uploadTooLarge(1000), $this->failure('files_upload', ['path' => '/novo.docx', 'size' => 1001]));
+		$size = 60 * 1024 * 1024;
+		$this->assertSame($size, $this->plan('files_upload', ['path' => '/novo.docx', 'size' => $size])['size']);
 		$this->assertNull($this->createToken());
-		$this->assertSame(1000, $this->plan('files_upload', ['path' => '/novo.docx', 'size' => 1000])['size']);
+		$this->assertArrayHasKey('uploadUrl', $this->json('files_upload', ['path' => '/novo.docx', 'size' => $size]));
 	}
 
 	/** A folder shared with other people asks the user first, and only a confirmed call mints the link. */
@@ -278,25 +278,17 @@ final class FilesCreateTest extends FilesToolsTestCase {
 		$this->assertSame(['create /alice/files/vazio.txt'], $this->tree->ops);
 	}
 
-	public function testOnlyTheTextExtensionsAreAcceptedInline(): void {
-		foreach (['md', 'txt', 'csv', 'json', 'html', 'xml', 'yaml', 'yml', 'MD'] as $extension) {
-			$this->assertSame('files_create', $this->plan('files_create', ['path' => '/novo.' . $extension, 'content' => 'x'])['action'], $extension);
-		}
-		foreach (['/novo.docx', '/novo.pdf', '/novo', '/novo.md.exe'] as $path) {
-			$e = $this->invalid('files_create', ['path' => $path, 'content' => 'x']);
-			$this->assertSame('path', $e->details()['field'], $path);
-			$this->assertStringContainsString('files_upload', $e->details()['rule'], $path);
+	public function testTextCreationAllowsArbitraryNativeValidNames(): void {
+		foreach (['/novo.md', '/novo.custom', '/novo', '/.custom', '/chapter.md,v'] as $path) {
+			$this->assertSame('files_create', $this->plan('files_create', ['path' => $path, 'content' => 'x'])['action'], $path);
 		}
 	}
 
-	public function testInlineContentIsCappedAtOneMegabyte(): void {
-		$limit = FileCreation::MAX_INLINE_BYTES;
-		$this->assertSame(1024 * 1024, $limit);
-		$this->assertSame(CreationMessages::createTooLarge($limit), $this->planFailure('files_create', ['path' => '/grande.txt', 'content' => str_repeat('a', $limit + 1)]));
-		$this->assertSame(CreationMessages::createTooLarge($limit), $this->failure('files_create', ['path' => '/grande.txt', 'content' => str_repeat('a', $limit + 1)]));
-		$this->assertStringContainsString('files_upload', CreationMessages::createTooLarge($limit));
-		$this->assertArrayNotHasKey('/alice/files/grande.txt', $this->tree->nodes);
-		$this->assertSame($limit, $this->json('files_create', ['path' => '/grande.txt', 'content' => str_repeat('a', $limit)])['size']);
+	public function testInlineCreationExceedsFormerOneMegabyteLimit(): void {
+		$content = str_repeat('a', 1024 * 1024 + 1);
+		$this->assertSame(strlen($content), $this->plan('files_create', ['path' => '/grande.custom', 'content' => $content])['size']);
+		$this->assertSame(strlen($content), $this->json('files_create', ['path' => '/grande.custom', 'content' => $content])['size']);
+		$this->assertSame($content, $this->tree->nodes['/alice/files/grande.custom']['content']);
 	}
 
 	/**

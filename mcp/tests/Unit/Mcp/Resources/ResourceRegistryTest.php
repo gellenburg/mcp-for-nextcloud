@@ -182,13 +182,11 @@ final class ResourceRegistryTest extends TestCase {
 		$this->assertSame('Ola mundo', $content['text']);
 	}
 
-	public function testReadFilesTruncatesLongText(): void {
+	public function testReadFilesReturnsFullLongText(): void {
 		$huge = str_repeat('A', FilesModule::MAX_CHARS + 500);
 		$this->tree->addFile('/alice/files/Documentos/huge.txt', $huge, 'text/plain');
 		$result = $this->registry->read('nc://files/Documentos/huge.txt', 'alice');
-		$text = $result['contents'][0]['text'];
-		$this->assertStringContainsString('[content truncated]', $text);
-		$this->assertLessThanOrEqual(FilesModule::MAX_CHARS + 50, mb_strlen($text));
+		$this->assertSame($huge, $result['contents'][0]['text']);
 	}
 
 	public function testReadFilesSmallBinaryBlob(): void {
@@ -200,22 +198,19 @@ final class ResourceRegistryTest extends TestCase {
 		$this->assertArrayNotHasKey('text', $content);
 	}
 
-	public function testReadFilesLargeBinaryThrowsToolFailure(): void {
-		$this->tree->addFile('/alice/files/Documentos/large.bin', 'large', 'application/octet-stream', [
-			'size' => ResourceRegistry::MAX_BLOB_BYTES + 1,
-		]);
-		$this->expectException(ToolFailure::class);
-		$this->expectExceptionMessage(BinaryResourceMessages::binaryResourceTooLarge(ResourceRegistry::MAX_BLOB_BYTES));
-		$this->registry->read('nc://files/Documentos/large.bin', 'alice');
+	public function testReadFilesLargeBinaryReturnsOriginalBytes(): void {
+		$bytes = str_repeat("\x00\x01", ResourceRegistry::MAX_BLOB_BYTES);
+		$this->tree->addFile('/alice/files/Documentos/large.bin', $bytes, 'application/octet-stream');
+		$result = $this->registry->read('nc://files/Documentos/large.bin', 'alice');
+		$this->assertSame($bytes, base64_decode($result['contents'][0]['blob'], true));
 	}
 
-	public function testReadFilesTextOverLimitThrowsToolFailure(): void {
-		$this->tree->addFile('/alice/files/Documentos/over_limit.txt', 'x', 'text/plain', [
+	public function testReadFilesUnknownExtensionOverFormerLimit(): void {
+		$this->tree->addFile('/alice/files/Documentos/project.custom', 'x', 'application/octet-stream', [
 			'size' => TextExtractor::MAX_BYTES + 1,
 		]);
-		$this->expectException(ToolFailure::class);
-		$this->expectExceptionMessage(\OCA\Mcp\Modules\Files\Presentation\ReadingMessages::readTooLarge(TextExtractor::MAX_BYTES));
-		$this->registry->read('nc://files/Documentos/over_limit.txt', 'alice');
+		$result = $this->registry->read('nc://files/Documentos/project.custom', 'alice');
+		$this->assertSame('x', $result['contents'][0]['text']);
 	}
 
 	public function testReadFilesPdfExtractsAsTextPlain(): void {

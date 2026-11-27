@@ -51,7 +51,7 @@ class TextExtractor {
 	public static function isText(File $file): bool {
 		$name = $file->getName();
 		$mime = (string)$file->getMimetype();
-		if (strtolower(pathinfo($name, PATHINFO_EXTENSION)) === 'pdf' || strtolower($mime) === 'application/pdf') {
+		if (strtolower(pathinfo($name, PATHINFO_EXTENSION)) === 'pdf') {
 			return false;
 		}
 		if (self::isTextNamed($name, $mime)) {
@@ -62,12 +62,17 @@ class TextExtractor {
 			return false;
 		}
 		// A MIME/extension registry miss is not a file-type denial.
-		return self::isPlainTextBytes((string)$file->getContent());
+		// Raster images and other known image containers use the binary path.
+		if (str_starts_with(strtolower($mime), 'image/')) {
+			return false;
+		}
+		$bytes = (string)$file->getContent();
+		return !str_starts_with($bytes, '%PDF-') && self::isPlainTextBytes($bytes);
 	}
 
 	/** Recognises arbitrary-extension ASCII/UTF-8 text without treating opaque binary bytes as editable text. */
 	public static function isPlainTextBytes(string $bytes): bool {
-		return mb_check_encoding($bytes, 'UTF-8')
+		return !str_starts_with($bytes, '%PDF-') && mb_check_encoding($bytes, 'UTF-8')
 			&& preg_match('/[\x00-\x08\x0E-\x1F\x7F]/', $bytes) === 0;
 	}
 
@@ -121,7 +126,7 @@ class TextExtractor {
 	 * @return string extracted and truncated text
 	 * @throws ToolFailure over the byte limit, unreadable or unsupported format
 	 */
-	public function readText(File $file, int $maxChars = self::MAX_CHARS): string {
+	public function readText(File $file, int $maxChars = PHP_INT_MAX): string {
 		$limit = $this->maxFileBytes();
 		if ($file->getSize() > $limit) {
 			throw new ToolFailure(self::tooLarge($limit));
