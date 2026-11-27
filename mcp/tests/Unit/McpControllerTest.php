@@ -188,8 +188,9 @@ final class McpControllerTest extends TestCase {
 		$this->assertSame(200, $this->listTools()[0]);
 	}
 
-	public function testOversizedBodyIs413(): void {
-		$this->assertSame(413, $this->controller(str_repeat(' ', 1048577))->post()->getStatus());
+	public function testValidRequestBeyondFormerOneMibLimitIsDispatched(): void {
+		$body = json_encode(['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'], JSON_THROW_ON_ERROR) . str_repeat(' ', 1048577);
+		$this->assertSame(200, $this->controller($body)->post()->getStatus());
 	}
 
 	public function testGetAndDeleteAre405WithoutSse(): void {

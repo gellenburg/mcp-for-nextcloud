@@ -43,7 +43,7 @@ final class MailSavePreflight {
 			throw new ToolFailure(MailMessages::messageChanged());
 		}
 		$size = $fetch->getSize();
-		if (!is_int($size) || $size <= 0 || $size > self::MAX_MESSAGE_BYTES) {
+		if (!is_int($size) || $size <= 0) {
 			throw new ToolFailure(MailSaveMessages::metadata());
 		}
 		$structure = $fetch->getStructure();

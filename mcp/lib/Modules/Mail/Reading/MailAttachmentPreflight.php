@@ -81,9 +81,6 @@ class MailAttachmentPreflight {
 		if (!MailBodyPreflight::sameMessage($messageId, (string)($fetch->getEnvelope()->message_id ?? ''))) {
 			throw new ToolFailure(MailMessages::messageChanged());
 		}
-		if ($size > MailBodyPreflight::MAX_MESSAGE_BYTES) {
-			throw new ToolFailure(MailAttachmentMessages::messageTooLarge($size, MailBodyPreflight::MAX_MESSAGE_BYTES));
-		}
 		$structure = $fetch->getStructure();
 		if (!is_object($structure)) {
 			throw new ToolFailure(MailAttachmentMessages::unavailable());

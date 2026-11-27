@@ -92,9 +92,6 @@ class MailAttachmentReader {
 			if (!is_string($content)) {
 				throw new ToolFailure(MailAttachmentMessages::unavailable());
 			}
-			if (strlen($content) > self::MAX_ATTACHMENT_BYTES) {
-				throw new ToolFailure(MailAttachmentMessages::attachmentTooLarge(self::MAX_ATTACHMENT_BYTES));
-			}
 			return ['part' => $part, 'content' => $content];
 		} catch (ToolFailure $e) {
 			throw $e;

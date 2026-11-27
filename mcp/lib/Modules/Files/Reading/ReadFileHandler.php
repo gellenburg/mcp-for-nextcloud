@@ -65,10 +65,11 @@ final class ReadFileHandler implements FileTextListing {
 			return \OCA\Mcp\Mcp\Tools\Results\ToolResult::json($this->checkout->issueRead($userId, $file, $path, $meta['access']));
 		}
 		if ($mode === 'metadata') {
-			if (!in_array(strtolower($meta['mime']), ['image/png', 'image/jpeg', 'image/jpg'], true)) {
-				throw new \OCA\Mcp\Mcp\Tools\Results\ToolFailure('Embedded metadata mode currently supports PNG and JPEG images.');
+			$bytes = $this->extractor->read($file);
+			if (!str_starts_with($bytes, "\x89PNG\r\n\x1a\n") && !str_starts_with($bytes, "\xff\xd8")) {
+				throw new \OCA\Mcp\Mcp\Tools\Results\ToolFailure('Embedded metadata mode supports PNG and JPEG content; use download for other formats.');
 			}
-			$embedded = \OCA\Mcp\Modules\Files\Images\EmbeddedImageMetadata::extract($this->extractor->read($file));
+			$embedded = \OCA\Mcp\Modules\Files\Images\EmbeddedImageMetadata::extract($bytes);
 			return \OCA\Mcp\Mcp\Tools\Results\ToolResult::json($meta + ['embedded_metadata' => $embedded]);
 		}
 		$scannable = OcrSupport::canLackText($file->getName(), (string)$file->getMimetype());

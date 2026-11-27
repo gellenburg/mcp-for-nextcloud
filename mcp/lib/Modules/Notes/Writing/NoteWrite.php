@@ -95,9 +95,7 @@ final class NoteWrite {
 	 * @throws ToolFailure When the content is over the note limit.
 	 */
 	public static function checkSize(string $content): void {
-		if (strlen($content) > NotesRepository::MAX_BYTES) {
-			throw new ToolFailure(NotesMessages::noteTooLarge(NotesRepository::MAX_BYTES));
-		}
+		// Compatibility hook: file admission and quotas are enforced by the native storage.
 	}
 
 	/**

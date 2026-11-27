@@ -285,13 +285,11 @@ final class ResourceRegistryTest extends TestCase {
 		$this->registry->read('nc://notes/99999', 'alice');
 	}
 
-	public function testReadNotesTooLargeThrowsToolFailure(): void {
-		$largeId = $this->tree->addFile('/alice/files/Notes/gigante.md', 'x', 'text/markdown', [
-			'size' => NotesModule::MAX_BYTES + 1,
-		]);
-		$this->expectException(ToolFailure::class);
-		$this->expectExceptionMessage(NotesMessages::noteTooLargeForReading(NotesModule::MAX_BYTES));
-		$this->registry->read('nc://notes/' . $largeId, 'alice');
+	public function testReadNotesOverFormerSizeLimit(): void {
+		$body = str_repeat('x', NotesModule::MAX_BYTES + 1);
+		$id = $this->tree->addFile('/alice/files/Notes/gigante.md', $body, 'text/markdown');
+		$result = $this->registry->read('nc://notes/' . $id, 'alice');
+		$this->assertSame($body, $result['contents'][0]['text']);
 	}
 
 	public function testReadUnknownUriSchemeThrowsNotFound(): void {
