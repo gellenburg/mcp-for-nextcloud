@@ -18,7 +18,7 @@ use OCP\Config\IUserConfig;
 use OCP\Files\{Folder, IRootFolder};
 use OCP\{IAppConfig, IConfig, Server};
 
-/** Real HTTP PUT/POST links re-read policy and preserve capabilities on pre-spend refusal. */
+/** Real HTTP PUT/POST links obey native grants and one-use capability semantics under legacy configuration. */
 final class FileWriteCheckoutTest extends IntegrationTestCase {
 	private Folder $folder;
 	private McpClient $mcp;
@@ -133,46 +133,53 @@ final class FileWriteCheckoutTest extends IntegrationTestCase {
 		}
 	}
 
-	/** PUT/POST create and checkout links minted before allowlist activation refuse without effects or spend. */
-	public function testOldLinksAre403WithoutSpendAndOffStillAcceptsBinaryForPutAndPost(): void {
+	/** Store a restrictive upstream value as it would exist after upgrading an older installation. */
+	private function legacyAllowlist(): void {
+		$config = Server::get(IAppConfig::class);
+		$config->setValueString('mcp', FileWritePolicy::KEY, '{"version":1,"mode":"allowlist","extensions":["txt"],"allowExtensionless":false}', false);
+		$config->clearCache(false);
+	}
+
+	/** Both upload methods accept binary bytes despite subsequent changes to the obsolete policy. */
+	public function testOldLinksAcceptBinaryAndRemainSingleUseForPutAndPost(): void {
 		foreach (['PUT', 'POST'] as $method) {
 			foreach (['create', 'replace'] as $kind) {
-				if ($method === 'PUT' && $kind === 'create') {
-					Server::get(IAppConfig::class)->deleteKey('mcp', FileWritePolicy::KEY);
-				} else {
-					Server::get(FileWritePolicy::class)->save('off', [], false);
-				}
+				$config = Server::get(IAppConfig::class);
+				$config->deleteKey('mcp', FileWritePolicy::KEY);
+				$config->clearCache(false);
 				$name = strtolower($method) . '-' . $kind . '.bin';
-				$original = null;
+				$originalId = null;
 				if ($kind === 'replace') {
 					$original = $this->folder->newFile($name, "original\0bytes");
-					$before = [$original->getId(), $original->getEtag(), $original->getContent()];
+					$originalId = $original->getId();
 				}
 				$url = $this->link($kind === 'create' ? 'files_upload' : 'files_checkout', $name);
-				Server::get(FileWritePolicy::class)->save('allowlist', ['txt'], false);
-				self::assertSame(403, $this->upload($method, $url, "new\0binary"));
+				$this->legacyAllowlist();
 				$row = Server::get(CheckoutTokenStore::class)->find(Server::get(TokenHasher::class)->hash(basename($url)));
 				self::assertNotNull($row);
 				self::assertFalse($row->used);
 				if ($kind === 'create') {
 					self::assertFalse($this->folder->nodeExists($name));
 				} else {
-					$node = $this->folder->get($name);
-					self::assertSame($before, [$node->getId(), $node->getEtag(), $node->getContent()]);
+					self::assertSame("original\0bytes", $this->folder->get($name)->getContent());
 				}
-				Server::get(FileWritePolicy::class)->save('off', [], false);
 				self::assertSame($kind === 'create' ? 201 : 200, $this->upload($method, $url, "new\0binary"));
-				self::assertSame("new\0binary", $this->folder->get($name)->getContent());
+				$node = $this->folder->get($name);
+				self::assertSame("new\0binary", $node->getContent());
+				if ($originalId !== null) {
+					self::assertSame($originalId, $node->getId());
+				}
 				self::assertSame(410, $this->upload($method, $url, 'again'));
+				self::assertSame("new\0binary", $this->folder->get($name)->getContent());
 			}
 		}
 	}
 
-	/** txt alone permits the mandatory backup; forbidden public extensions leave no new node. */
-	public function testAllowlistCreateAndCheckoutKeepVerifiedInternalBakForPutAndPost(): void {
-		Server::get(FileWritePolicy::class)->save('allowlist', ['txt'], false);
+	/** Both upload methods preserve the mandatory backup and accept native-valid public extensions. */
+	public function testNativeCreateAndCheckoutKeepVerifiedInternalBakForPutAndPost(): void {
+		$this->legacyAllowlist();
 		foreach (['PUT', 'POST'] as $method) {
-			$name = strtolower($method) . '.txt';
+			$name = strtolower($method) . '.bin';
 			$url = $this->link('files_upload', $name);
 			self::assertSame(201, $this->upload($method, $url, 'original'));
 			$reply = Http::request($method, $this->link('files_checkout', $name), ['Content-Type: application/octet-stream'], 'changed');
@@ -183,13 +190,15 @@ final class FileWriteCheckoutTest extends IntegrationTestCase {
 			self::assertSame('original', $home->get($data['backup'])->getContent());
 			self::assertSame('changed', $this->folder->get($name)->getContent());
 		}
-		foreach (['public.bak', 'public.vcf', 'public.bin'] as $name) {
-			foreach ([false, true] as $confirmed) {
-				$args = ['path' => $this->path($name)];
-				$reply = $confirmed ? $this->mcp->write('files_upload', $args) : $this->mcp->tool('files_upload', $args);
-				self::assertTrue($reply->isError());
-				self::assertFalse($this->folder->nodeExists($name));
-			}
+		foreach (['public.bak', 'public.vcf', 'public.bin', 'README', '.settings'] as $name) {
+			$args = ['path' => $this->path($name)];
+			$plan = $this->mcp->tool('files_upload', $args);
+			self::assertTrue($plan->ok(), $plan->describe());
+			self::assertFalse($this->folder->nodeExists($name));
+			$url = $this->link('files_upload', $name);
+			self::assertFalse($this->folder->nodeExists($name));
+			self::assertSame(201, $this->upload('PUT', $url, 'public bytes'));
+			self::assertSame('public bytes', $this->folder->get($name)->getContent());
 		}
 	}
 }
