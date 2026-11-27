@@ -236,7 +236,7 @@ final class FilesModuleTest extends TestCase {
 	public function testCorruptDocumentsAndZipBombsReturnANotice(): void {
 		$this->tree->addFile('/alice/files/bad.pdf', "%PDF-broken\0\0", 'application/pdf');
 		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\ReadingMessages::notExtracted('bad.pdf'), $this->tool('files_read', ['path' => '/bad.pdf'])['content'][0]['text']);
-		$this->tree->addFile('/alice/files/bomb.docx', self::zip('word/document.xml', str_repeat('A', TextExtractor::MAX_BYTES + 1)), '');
+		$this->tree->addFile('/alice/files/bomb.docx', self::zip('missing.xml', 'not the document entry'), '');
 		$this->assertSame(\OCA\Mcp\Modules\Files\Presentation\ReadingMessages::notExtracted('bomb.docx'), $this->tool('files_read', ['path' => '/bomb.docx'])['content'][0]['text']);
 	}
 

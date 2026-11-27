@@ -20,7 +20,7 @@ final class CheckoutMessages {
 	 * @return string the plan of files_checkout
 	 */
 	public static function planCheckout(): string {
-		return Translator::t('Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace.');
+		return Translator::t('Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace.');
 	}
 
 	/**

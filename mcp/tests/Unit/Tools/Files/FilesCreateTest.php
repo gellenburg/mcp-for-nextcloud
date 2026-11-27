@@ -85,7 +85,7 @@ final class FilesCreateTest extends FilesToolsTestCase {
 		$this->assertSame('Relatório.docx', $plan['name']);
 		$this->assertSame('/Documentos', $plan['folder']);
 		$this->assertSame(2048, $plan['size']);
-		$this->assertSame(CheckoutService::NATIVE_ONLY, $plan['uploadMaxBytes']);
+		$this->assertNull($plan['uploadMaxBytes']);
 		$this->assertSame(CheckoutService::UPLOAD_TTL, $plan['uploadTtlSeconds']);
 		$this->assertFalse($plan['requiresSharedConfirmation']);
 		$this->assertTrue($plan['linksAfterConfirmation']);

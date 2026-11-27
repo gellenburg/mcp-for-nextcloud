@@ -33,6 +33,8 @@ final class CreationPlanText {
 		}
 		if (isset($plan['uploadMaxBytes'])) {
 			$lines[] = '- ' . Translator::t('The file can weigh up to %s.', [PlanFormatting::bytes((int)$plan['uploadMaxBytes'])]);
+		} elseif (array_key_exists('uploadMaxBytes', $plan)) {
+			$lines[] = '- No MCP file-size ceiling; native limits apply.';
 		}
 		$lines[] = '- ' . CreationMessages::planNewFileConsequence();
 		return array_merge($lines, PlanConsequences::sharing($plan));

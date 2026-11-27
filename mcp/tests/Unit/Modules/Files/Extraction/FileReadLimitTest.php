@@ -82,27 +82,27 @@ final class FileReadLimitTest extends TestCase {
 		$this->assertSame(128 * 1024 * 1024, $limit->phpMaxBytes());
 		$this->assertFalse($limit->phpUnlimited());
 		$this->assertFalse($limit->phpRejected());
-		$this->assertSame(FileReadLimit::DEFAULT_MAX_BYTES, $limit->maxBytes());
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $limit->maxBytes());
 		$stored->app['mcp'][FileReadLimit::MAX_BYTES_KEY] = (string)(10 * 1024 * 1024);
-		$this->assertSame(10 * 1024 * 1024, $limit->maxBytes());
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $limit->maxBytes());
 		$stored->app['mcp'][FileReadLimit::MAX_BYTES_KEY] = (string)(200 * 1024 * 1024);
-		$this->assertSame(FileReadLimit::DEFAULT_MAX_BYTES, $limit->maxBytes());
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $limit->maxBytes());
 
 		$value = '1G';
 		$this->assertSame(1024 ** 3, $limit->phpMaxBytes());
-		$this->assertSame(173364565, $limit->maxBytes());
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $limit->maxBytes());
 		$value = '256M';
 		$this->assertSame(256 * 1024 * 1024, $limit->phpMaxBytes());
-		$this->assertSame(39146837, $limit->maxBytes());
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $limit->maxBytes());
 		$value = '-1';
 		$this->assertTrue($limit->phpUnlimited());
 		$this->assertFalse($limit->phpRejected());
 		$this->assertSame(0, $limit->phpMaxBytes());
-		$this->assertSame(200 * 1024 * 1024, $limit->maxBytes());
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $limit->maxBytes());
 		$value = 'nope';
 		$this->assertTrue($limit->phpRejected());
 		$this->assertFalse($limit->phpUnlimited());
 		$this->assertSame(0, $limit->phpMaxBytes());
-		$this->assertSame(FileReadLimit::DEFAULT_MAX_BYTES, $limit->maxBytes());
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $limit->maxBytes());
 	}
 }

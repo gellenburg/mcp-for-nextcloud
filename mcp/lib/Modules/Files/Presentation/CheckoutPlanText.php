@@ -32,6 +32,8 @@ final class CheckoutPlanText {
 		}
 		if (isset($plan['uploadMaxBytes'])) {
 			$lines[] = '- ' . Translator::t('The new version can weigh up to %s.', [PlanFormatting::bytes((int)$plan['uploadMaxBytes'])]);
+		} elseif (array_key_exists('uploadMaxBytes', $plan)) {
+			$lines[] = '- No MCP file-size ceiling; native limits apply.';
 		}
 		$lines[] = '- ' . Translator::t('Nothing is changed until the new version is uploaded.');
 		return array_merge($lines, PlanConsequences::backup($plan), PlanConsequences::sharing($plan));

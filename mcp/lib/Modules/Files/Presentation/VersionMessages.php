@@ -18,7 +18,7 @@ final class VersionMessages {
 
 	/** @return string description of files_version_read */
 	public static function versionReadTool(): string {
-		return 'Read the text of a previous file version, with the same limit and text extraction as '
+		return 'Read the text of a previous file version, with the same text extraction as '
 			. 'files_read.';
 	}
 
