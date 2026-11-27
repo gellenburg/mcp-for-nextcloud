@@ -23,7 +23,7 @@ final class ReadingMessages {
 
 	/** @return string description of files_read */
 	public static function readTool(): string {
-		return 'Read the text of a file from Nextcloud (plain text/markdown directly; PDF/DOCX/ODT via text extraction).';
+		return 'Read text regardless of filename extension when the bytes are text; DOCX/ODT and .pdf files use dedicated extraction. For other binary files use mode=download.';
 	}
 
 	/** @return string description of files_tree */

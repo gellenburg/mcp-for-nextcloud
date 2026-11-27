@@ -15,17 +15,14 @@ final class ImageMessages {
 	public static function imageViewTool(): string {
 		return 'Fetch a reduced preview of an image file as inline image bytes, so the model can actually see it. '
 			. 'Reads only; honors the user folder and permissions. Supports JPG, PNG, HEIC, WebP, GIF, TIFF and the '
-			. 'first page of a PDF when the Nextcloud server has a preview provider for the format. The returned '
-			. 'image is JPEG/PNG/WebP under a server-wide byte limit: if the preview is still too big the max '
-			. 'dimension is reduced until it fits.';
+			. 'first page of a .pdf file when Nextcloud provides a preview. Returned image bytes have no MCP byte ceiling.';
 	}
 
 	/** @return string description of files_images_view */
 	public static function imagesViewTool(): string {
 		return 'Fetch several image previews in a single call. Pass either paths (up to 6 items) or folder (plus '
-			. 'an optional limit) to pick the most recently modified images under that folder. The total image '
-			. 'bytes stay under a server-wide budget; images that do not fit are reported as skipped with the '
-			. 'reason, so the agent knows what was left out.';
+			. 'an optional limit) to pick the most recently modified images under that folder. No MCP byte budget applies. '
+			. 'Images that cannot be previewed are reported as skipped with the reason.';
 	}
 
 	/** @return string description of files_image_search */

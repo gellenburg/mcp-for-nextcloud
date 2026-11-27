@@ -81,7 +81,7 @@ final class ImageSelection {
 					$out[] = [$path, null, \OCA\Mcp\Modules\Files\Presentation\ImageMessages::notAnImage()];
 					continue;
 				}
-				if (!ImageFileAccess::looksLikeImage((string)$node->getMimetype())) {
+				if (!ImageFileAccess::looksLikeImage((string)$node->getMimetype(), $node->getName())) {
 					$out[] = [$path, null, \OCA\Mcp\Modules\Files\Presentation\ImageMessages::notAnImage()];
 					continue;
 				}
