@@ -146,7 +146,7 @@ final class NoteTypePolicyTest extends ExclusionTestCase {
 			'plan_state' => $plan['plan_state'],
 		]);
 		$this->assertTrue($written->ok(), $written->describe());
-		$this->assertSame("# Chamados\n- 102", $this->stored('Chamados.md'));
+		$this->assertSame("# Chamados\n- 102\n", $this->stored('Chamados.md'));
 	}
 
 	/** Move planning leaves the destination absent; confirmation preserves note identity and bytes. */
