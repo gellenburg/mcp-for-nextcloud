@@ -10,7 +10,6 @@ namespace OCA\Mcp\Tests\Integration\Files;
 use OCA\Mcp\Access\FileTypes\FileWritePolicy;
 use OCA\Mcp\Tests\Integration\Exclusion\ExclusionTestCase;
 use OCA\Mcp\Tests\Integration\Support\McpClient;
-use OCA\Mcp\Access\FileTypes\FileTypeMessages;
 use OCP\IAppConfig;
 use OCP\Server;
 
@@ -41,7 +40,12 @@ final class CopyMoveFilePolicyTest extends ExclusionTestCase {
 	 * @return void
 	 */
 	private function policy(bool $active): void {
-		Server::get(FileWritePolicy::class)->save($active ? 'allowlist' : 'off', ['txt'], false);
+		$config = Server::get(IAppConfig::class);
+		$config->setValueString('mcp', FileWritePolicy::KEY, json_encode([
+			'version' => 1, 'mode' => $active ? 'allowlist' : 'off',
+			'extensions' => ['txt'], 'allowExtensionless' => false,
+		], JSON_THROW_ON_ERROR), false);
+		$config->clearCache(false);
 	}
 
 	/**
@@ -52,58 +56,50 @@ final class CopyMoveFilePolicyTest extends ExclusionTestCase {
 		return '/' . $this->run . '/folder.php/' . $name;
 	}
 
-	/** Plans and direct confirmations deny txt to php while allowing php to txt, preserving native IDs. */
-	public function testFinalNameControlsBothToolsAndBothBoundaries(): void {
+	/** Plans do not mutate; confirmation accepts native-valid names and preserves copy/move identity. */
+	public function testNativeNamesAcrossBothToolsAndBoundaries(): void {
 		foreach (['files_copy', 'files_move'] as $tool) {
-			$args = ['from' => $this->file('input.txt'), 'to' => $this->file('blocked.php')];
-			foreach ([false, true] as $confirm) {
-				$reply = $this->client->tool($tool, $args + ['confirm' => $confirm, 'confirm_shared' => true]);
-				self::assertTrue($reply->isError(), $reply->describe());
-				self::assertStringContainsString(FileTypeMessages::denied(), $reply->text());
-				self::assertFalse($this->exists(self::ALICE, $args['to']));
-				self::assertSame('original', $this->node(self::ALICE, $args['from'])->getContent());
-			}
-			$args = ['from' => $this->file('legacy.php'), 'to' => $this->file($tool . '.txt')];
+			$args = ['from' => $this->file('input.txt'), 'to' => $this->file($tool . '.php')];
 			$id = (int)$this->node(self::ALICE, $args['from'])->getId();
 			$plan = $this->client->tool($tool, $args);
 			self::assertTrue($plan->ok(), $plan->describe());
-			self::assertFalse($this->exists(self::ALICE, $args['to']), 'Planning creates nothing');
+			self::assertTrue($plan->json()['requiresConfirmation'] ?? false, $plan->describe());
+			self::assertFalse($this->exists(self::ALICE, $args['to']));
+			self::assertSame('original', $this->node(self::ALICE, $args['from'])->getContent());
 			$reply = $this->client->write($tool, $args);
 			self::assertTrue($reply->ok(), $reply->describe());
 			$result = $reply->json();
 			self::assertSame($id, $result['idBefore']);
 			$tool === 'files_copy' ? self::assertNotSame($id, $result['idAfter']) : self::assertSame($id, $result['idAfter']);
-			self::assertSame('legacy', $this->node(self::ALICE, $args['to'])->getContent());
+			self::assertSame('original', $this->node(self::ALICE, $args['to'])->getContent());
+			self::assertSame($tool === 'files_copy', $this->exists(self::ALICE, $args['from']));
 		}
 	}
 
-	/** A valid first copy leaves the copied file intact when the second-step rename is forbidden. */
-	public function testTwoStepsCannotBypassThePolicy(): void {
+	/** A subsequent rename to an unlisted extension preserves the copied file's native identity. */
+	public function testTwoStepRenamePreservesIdentity(): void {
 		$args = ['from' => $this->file('input.txt'), 'to' => $this->file('stage.txt')];
 		$reply = $this->client->write('files_copy', $args);
 		self::assertTrue($reply->ok(), $reply->describe());
 		$id = (int)$this->node(self::ALICE, $args['to'])->getId();
-		$reply = $this->client->write('files_move', ['from' => $args['to'], 'to' => $this->file('stage.php')]);
-		self::assertTrue($reply->isError(), $reply->describe());
-		self::assertStringContainsString(FileTypeMessages::denied(), $reply->text());
-		self::assertSame($id, (int)$this->node(self::ALICE, $args['to'])->getId());
-		self::assertSame('original', $this->node(self::ALICE, $args['to'])->getContent());
-		self::assertFalse($this->exists(self::ALICE, $this->file('stage.php')));
+		$to = $this->file('stage.php');
+		$reply = $this->client->write('files_move', ['from' => $args['to'], 'to' => $to]);
+		self::assertTrue($reply->ok(), $reply->describe());
+		self::assertSame($id, (int)$this->node(self::ALICE, $to)->getId());
+		self::assertSame('original', $this->node(self::ALICE, $to)->getContent());
+		self::assertFalse($this->exists(self::ALICE, $args['to']));
+		self::assertSame('original', $this->node(self::ALICE, $args['from'])->getContent());
 	}
 
-	/** A fresh HTTP confirmation observes a policy enabled after the plan; off keeps native behavior. */
-	public function testChangedPolicyAndOffAcrossRequests(): void {
+	/** Legacy configuration changes cannot revoke a valid plan between HTTP requests. */
+	public function testChangedLegacyPolicyDoesNotRestrictConfirmation(): void {
 		foreach (['files_copy', 'files_move'] as $tool) {
 			$this->policy(false);
 			$args = ['from' => $this->file('input.txt'), 'to' => $this->file($tool . '.php')];
 			$plan = $this->client->tool($tool, $args);
 			self::assertTrue($plan->ok(), $plan->describe());
-			$this->policy(true);
-			$reply = $this->client->write($tool, $args);
-			self::assertTrue($reply->isError(), $reply->describe());
-			self::assertStringContainsString(FileTypeMessages::denied(), $reply->text());
 			self::assertFalse($this->exists(self::ALICE, $args['to']));
-			$this->policy(false);
+			$this->policy(true);
 			$reply = $this->client->write($tool, $args);
 			self::assertTrue($reply->ok(), $reply->describe());
 			self::assertSame('original', $this->node(self::ALICE, $args['to'])->getContent());
@@ -121,15 +117,11 @@ final class CopyMoveFilePolicyTest extends ExclusionTestCase {
 		}
 	}
 
-	/** The existing team-folder confirmation is required for allowed names, never a type-policy bypass. */
-	public function testSharedConfirmationIsPreservedAndDoesNotBypassPolicy(): void {
+	/** Team-folder confirmation is still required for native-valid names with unlisted extensions. */
+	public function testSharedConfirmationIsPreserved(): void {
 		$this->makeFile('groupfolder', 'shared.txt', 'team content');
 		foreach (['files_copy', 'files_move'] as $tool) {
 			$args = ['from' => $this->path('groupfolder', 'shared.txt'), 'to' => $this->path('groupfolder', $tool . '.php')];
-			$reply = $this->client->tool($tool, $args + ['confirm' => true, 'confirm_shared' => true]);
-			self::assertTrue($reply->isError(), $reply->describe());
-			self::assertStringContainsString(FileTypeMessages::denied(), $reply->text());
-			$args['to'] = $this->path('groupfolder', $tool . '.txt');
 			$reply = $this->client->tool($tool, $args + ['confirm' => true]);
 			self::assertTrue($reply->ok(), $reply->describe());
 			self::assertTrue($reply->json()['requiresConfirmation'] ?? false, $reply->describe());
@@ -140,8 +132,8 @@ final class CopyMoveFilePolicyTest extends ExclusionTestCase {
 		}
 	}
 
-	/** A real administrator uses the same file policy on both tools and both boundaries. */
-	public function testAdministratorHasNoImplicitExemption(): void {
+	/** Administrators and ordinary users have identical native extension admission. */
+	public function testAdministratorHasSameNativeAdmission(): void {
 		$groups = Server::get(\OCP\IGroupManager::class);
 		$admin = $groups->get('admin');
 		$user = Server::get(\OCP\IUserManager::class)->get(self::ALICE);
@@ -152,13 +144,13 @@ final class CopyMoveFilePolicyTest extends ExclusionTestCase {
 		try {
 			self::assertTrue($groups->isAdmin(self::ALICE));
 			foreach (['files_copy', 'files_move'] as $tool) {
-				foreach ([false, true] as $confirm) {
-					$args = ['from' => $this->file('input.txt'), 'to' => $this->file('admin.php'), 'confirm' => $confirm, 'confirm_shared' => true];
-					$reply = $this->client->tool($tool, $args);
-					self::assertTrue($reply->isError(), $reply->describe());
-					self::assertStringContainsString(FileTypeMessages::denied(), $reply->text());
-					self::assertFalse($this->exists(self::ALICE, $args['to']));
-				}
+				$args = ['from' => $this->file('input.txt'), 'to' => $this->file('admin-' . $tool . '.php')];
+				$plan = $this->client->tool($tool, $args);
+				self::assertTrue($plan->ok(), $plan->describe());
+				self::assertFalse($this->exists(self::ALICE, $args['to']));
+				$reply = $this->client->write($tool, $args);
+				self::assertTrue($reply->ok(), $reply->describe());
+				self::assertSame('original', $this->node(self::ALICE, $args['to'])->getContent());
 			}
 		} finally {
 			$admin->removeUser($user);
