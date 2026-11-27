@@ -81,7 +81,8 @@
                 "status": 200,
                 "json": {
                     "configuredBytes": 5242880,
-                    "effectiveBytes": 5242880,
+                    "effectiveBytes": null,
+                    "nativeOnly": true,
                     "phpBytes": 8388608,
                     "defaultBytes": 52428800
                 }

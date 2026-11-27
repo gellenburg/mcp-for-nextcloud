@@ -16,7 +16,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "**Upload new file**\n\nCreate the new file **/Docs/new.md** with the content you send.\n\n- Inside: **/Docs**\n- The upload link works once, for 15 minutes.\n- The file can weigh up to 8 MB.\n- Nothing is overwritten: if a file with this name already exists, with content, nothing is written.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use upload link is issued that creates this new file; the file only appears once the bytes are sent to it.*"
+                                "text": "**Upload new file**\n\nCreate the new file **/Docs/new.md** with the content you send.\n\n- Inside: **/Docs**\n- The upload link works once, for 15 minutes.\n- No MCP file-size ceiling; native limits apply.\n- Nothing is overwritten: if a file with this name already exists, with content, nothing is written.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use upload link is issued that creates this new file; the file only appears once the bytes are sent to it.*"
                             }
                         ],
                         "structuredContent": {
@@ -27,7 +27,7 @@
                             "path": "/Docs/new.md",
                             "name": "new.md",
                             "folder": "/Docs",
-                            "uploadMaxBytes": 8388608,
+                            "uploadMaxBytes": null,
                             "uploadTtlSeconds": 900,
                             "access": {
                                 "scope": "personal",
@@ -111,7 +111,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "**Upload new file**\n\nCreate the new file **/Docs/new.md** with the content you send.\n\n- Inside: **/Docs**\n- The upload link works once, for 15 minutes.\n- The file can weigh up to 8 MB.\n- Nothing is overwritten: if a file with this name already exists, with content, nothing is written.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use upload link is issued that creates this new file; the file only appears once the bytes are sent to it.*"
+                                "text": "**Upload new file**\n\nCreate the new file **/Docs/new.md** with the content you send.\n\n- Inside: **/Docs**\n- The upload link works once, for 15 minutes.\n- No MCP file-size ceiling; native limits apply.\n- Nothing is overwritten: if a file with this name already exists, with content, nothing is written.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use upload link is issued that creates this new file; the file only appears once the bytes are sent to it.*"
                             }
                         ],
                         "structuredContent": {
@@ -122,7 +122,7 @@
                             "path": "/Docs/new.md",
                             "name": "new.md",
                             "folder": "/Docs",
-                            "uploadMaxBytes": 8388608,
+                            "uploadMaxBytes": null,
                             "uploadTtlSeconds": 900,
                             "access": {
                                 "scope": "personal",
@@ -176,7 +176,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "**Upload new file**\n\nCreate the new file **/Docs/new.md** with the content you send.\n\n- Inside: **/Docs**\n- The upload link works once, for 15 minutes.\n- The file can weigh up to 8 MB.\n- Nothing is overwritten: if a file with this name already exists, with content, nothing is written.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use upload link is issued that creates this new file; the file only appears once the bytes are sent to it.*"
+                                "text": "**Upload new file**\n\nCreate the new file **/Docs/new.md** with the content you send.\n\n- Inside: **/Docs**\n- The upload link works once, for 15 minutes.\n- No MCP file-size ceiling; native limits apply.\n- Nothing is overwritten: if a file with this name already exists, with content, nothing is written.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use upload link is issued that creates this new file; the file only appears once the bytes are sent to it.*"
                             }
                         ],
                         "structuredContent": {
@@ -187,7 +187,7 @@
                             "path": "/Docs/new.md",
                             "name": "new.md",
                             "folder": "/Docs",
-                            "uploadMaxBytes": 8388608,
+                            "uploadMaxBytes": null,
                             "uploadTtlSeconds": 900,
                             "access": {
                                 "scope": "personal",
@@ -238,7 +238,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "{\n    \"path\": \"/Docs/new.md\",\n    \"uploadUrl\": \"https://cloud.test/index.php/apps/mcp/mcp.checkout.upload/<create-token#1>\",\n    \"method\": \"PUT\",\n    \"expiresAt\": \"2026-09-21T14:28:20Z\",\n    \"maxBytes\": 8388608,\n    \"curl\": \"curl -sS -T /path/to/local/file -X PUT -H \\\"Content-Type: application/octet-stream\\\" \\\"https://cloud.test/index.php/apps/mcp/mcp.checkout.upload/<create-token#1>\\\"\",\n    \"message\": \"Send the file with the curl command below before the link expires. The link works once: if the upload is refused before it is used, fix the request and send it again; otherwise call files_upload again.\"\n}"
+                                "text": "{\n    \"path\": \"/Docs/new.md\",\n    \"uploadUrl\": \"https://cloud.test/index.php/apps/mcp/mcp.checkout.upload/<create-token#1>\",\n    \"method\": \"PUT\",\n    \"expiresAt\": \"2026-09-21T14:28:20Z\",\n    \"maxBytes\": null,\n    \"curl\": \"curl -sS -T /path/to/local/file -X PUT -H \\\"Content-Type: application/octet-stream\\\" \\\"https://cloud.test/index.php/apps/mcp/mcp.checkout.upload/<create-token#1>\\\"\",\n    \"message\": \"Send the file with the curl command below before the link expires. The link works once: if the upload is refused before it is used, fix the request and send it again; otherwise call files_upload again.\"\n}"
                             }
                         ]
                     }
@@ -331,7 +331,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "**Upload new file**\n\nCreate the new file **/Docs/new.md** with the content you send.\n\n- Inside: **/Docs**\n- The upload link works once, for 15 minutes.\n- The file can weigh up to 8 MB.\n- Nothing is overwritten: if a file with this name already exists, with content, nothing is written.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use upload link is issued that creates this new file; the file only appears once the bytes are sent to it.*"
+                                "text": "**Upload new file**\n\nCreate the new file **/Docs/new.md** with the content you send.\n\n- Inside: **/Docs**\n- The upload link works once, for 15 minutes.\n- No MCP file-size ceiling; native limits apply.\n- Nothing is overwritten: if a file with this name already exists, with content, nothing is written.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use upload link is issued that creates this new file; the file only appears once the bytes are sent to it.*"
                             }
                         ],
                         "structuredContent": {
@@ -342,7 +342,7 @@
                             "path": "/Docs/new.md",
                             "name": "new.md",
                             "folder": "/Docs",
-                            "uploadMaxBytes": 8388608,
+                            "uploadMaxBytes": null,
                             "uploadTtlSeconds": 900,
                             "access": {
                                 "scope": "personal",
@@ -407,7 +407,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "{\n    \"path\": \"/Docs/new.md\",\n    \"uploadUrl\": \"https://cloud.test/index.php/apps/mcp/mcp.checkout.upload/<create-token#2>\",\n    \"method\": \"PUT\",\n    \"expiresAt\": \"2026-09-21T14:28:20Z\",\n    \"maxBytes\": 8388608,\n    \"curl\": \"curl -sS -T /path/to/local/file -X PUT -H \\\"Content-Type: application/octet-stream\\\" \\\"https://cloud.test/index.php/apps/mcp/mcp.checkout.upload/<create-token#2>\\\"\",\n    \"message\": \"Send the file with the curl command below before the link expires. The link works once: if the upload is refused before it is used, fix the request and send it again; otherwise call files_upload again.\"\n}"
+                                "text": "{\n    \"path\": \"/Docs/new.md\",\n    \"uploadUrl\": \"https://cloud.test/index.php/apps/mcp/mcp.checkout.upload/<create-token#2>\",\n    \"method\": \"PUT\",\n    \"expiresAt\": \"2026-09-21T14:28:20Z\",\n    \"maxBytes\": null,\n    \"curl\": \"curl -sS -T /path/to/local/file -X PUT -H \\\"Content-Type: application/octet-stream\\\" \\\"https://cloud.test/index.php/apps/mcp/mcp.checkout.upload/<create-token#2>\\\"\",\n    \"message\": \"Send the file with the curl command below before the link expires. The link works once: if the upload is refused before it is used, fix the request and send it again; otherwise call files_upload again.\"\n}"
                             }
                         ]
                     }
