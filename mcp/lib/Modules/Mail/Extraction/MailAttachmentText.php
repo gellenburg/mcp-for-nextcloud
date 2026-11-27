@@ -51,7 +51,10 @@ class MailAttachmentText {
 	 * @throws ToolFailure when the kind cannot be read as text, or the file is encrypted, damaged or over the limits
 	 */
 	public function extract(string $bytes, MailAttachmentPart $part): array {
-		if (strtolower(pathinfo($part->name ?? '', PATHINFO_EXTENSION)) === 'pdf' && MailAttachmentPdf::looksLikePdf($bytes)) {
+		if (MailAttachmentPdf::looksLikePdf($bytes)) {
+			if (strtolower(pathinfo($part->name ?? '', PATHINFO_EXTENSION)) !== 'pdf') {
+				throw new ToolFailure(MailAttachmentMessages::unsupportedType());
+			}
 			return ['kind' => 'pdf', 'text' => MailAttachmentPdf::text($bytes)];
 		}
 		if (MailAttachmentDocument::looksLikeZip($bytes)) {

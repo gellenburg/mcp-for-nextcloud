@@ -70,10 +70,10 @@ final class MailAttachmentTextTest extends TestCase {
 	 */
 	public function testOtherKindsAreRefused(): void {
 		$this->assertRefused(MailAttachmentMessages::unsupportedType(), "GIF89a\x01\x00", 'image/gif');
-		$this->assertRefused(MailAttachmentMessages::unsupportedType(), 'plain words', 'application/octet-stream');
+		$this->assertSame(['kind' => 'text', 'text' => 'plain words'], $this->extract('plain words', 'application/octet-stream', null));
 		$this->assertRefused(MailAttachmentMessages::unsupportedType(), "binary\0data", 'text/plain');
 		$this->assertRefused(MailAttachmentMessages::unsupportedType(), "\xD0\xCF\x11\xE0 legacy office", 'application/msword');
-		$this->assertRefused(MailAttachmentMessages::unsupportedType(), 'a PDF is declared but this is text', 'application/pdf');
+		$this->assertSame('a PDF is declared but this is text', $this->extract('a PDF is declared but this is text', 'application/pdf', null)['text']);
 	}
 
 	/**
@@ -88,6 +88,12 @@ final class MailAttachmentTextTest extends TestCase {
 			$this->assertStringContainsString('Quarterly report', $result['text'], $type);
 		}
 		$this->assertStringContainsString('Packed text', $this->extract(AttachmentSamples::pdf('Packed text', 'FlateDecode'), 'application/pdf', null)['text']);
+	}
+
+	public function testPdfContentWithAnotherExtensionIsNotParsedEvenIfMimeSaysPdf(): void {
+		$this->expectException(ToolFailure::class);
+		$this->expectExceptionMessage(MailAttachmentMessages::unsupportedType());
+		$this->extract(AttachmentSamples::pdf('not to be parsed'), 'application/pdf', null, 'document.custom');
 	}
 
 	/**
@@ -162,8 +168,8 @@ final class MailAttachmentTextTest extends TestCase {
 	 * @param string|null $charset declared charset
 	 * @return array{kind:string, text:string} the result
 	 */
-	private function extract(string $bytes, string $type, ?string $charset): array {
-		return $this->text()->extract($bytes, new MailAttachmentPart('2', $type, $charset, 'file'));
+	private function extract(string $bytes, string $type, ?string $charset, ?string $name = null): array {
+		return $this->text()->extract($bytes, new MailAttachmentPart('2', $type, $charset, $name ?? (str_starts_with($bytes, '%PDF-') ? 'file.PDF' : 'file.custom')));
 	}
 
 	/**

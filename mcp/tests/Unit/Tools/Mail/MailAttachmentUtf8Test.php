@@ -51,6 +51,6 @@ final class MailAttachmentUtf8Test extends TestCase {
 		$temp = $this->createMock(ITempManager::class);
 		$temp->method('getTemporaryFile')->willReturnCallback(static fn (): string => (string)tempnam(sys_get_temp_dir(), 'mcp-att'));
 		$text = new MailAttachmentText(new MailAttachmentDocument($temp));
-		return $text->extract($bytes, new MailAttachmentPart('2', 'application/octet-stream', null, 'file'));
+		return $text->extract($bytes, new MailAttachmentPart('2', 'application/octet-stream', null, str_starts_with($bytes, '%PDF-') ? 'file.pdf' : 'file'));
 	}
 }

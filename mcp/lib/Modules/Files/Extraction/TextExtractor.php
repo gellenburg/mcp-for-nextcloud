@@ -117,15 +117,7 @@ class TextExtractor {
 		return $mime !== '' ? $mime : 'text/plain';
 	}
 
-	/**
-	 * Extracts text from a file, enforcing the byte limit and truncating to MAX_CHARS.
-	 * Shared by files_read and resources/read.
-	 *
-	 * @param File $file readable file within MAX_BYTES
-	 * @param int $maxChars character limit before truncation
-	 * @return string extracted and truncated text
-	 * @throws ToolFailure over the byte limit, unreadable or unsupported format
-	 */
+	/** Full extracted text by default; callers may explicitly request a character limit. */
 	public function readText(File $file, int $maxChars = PHP_INT_MAX): string {
 		$limit = $this->maxFileBytes();
 		if ($file->getSize() > $limit) {
@@ -153,15 +145,7 @@ class TextExtractor {
 		return $this->extractBytes($this->readLimited($file, $limit), $file->getName(), (string)$file->getMimetype(), $limit);
 	}
 
-	/**
-	 * Same extraction for content that is not a node, so a stored version reads exactly like a file.
-	 *
-	 * @param string $bytes raw content within MAX_BYTES
-	 * @param string $name file name the content came from, whose extension counts as text
-	 * @param string $mime MIME type the content came from
-	 * @return string extracted text; a localized extraction-failure notice (see \OCA\Mcp\Modules\Files\Presentation\ReadingMessages::notExtracted) for a corrupt PDF/DOCX/ODT
-	 * @throws ToolFailure for an unsupported format
-	 */
+	/** Extract content from either a native file or its stored version. */
 	public function extractBytes(string $bytes, string $name, string $mime, ?int $limit = null): string {
 		$limit ??= $this->maxFileBytes();
 		$mime = strtolower($mime);
@@ -175,7 +159,7 @@ class TextExtractor {
 		if ($mime === self::ODT || $extension === 'odt') {
 			return $this->guarded($name, fn () => $this->zipXml($bytes, 'content.xml', ['#</text:(p|h)>#' => "\n", '#<text:tab\s*/>#' => "\t", '#<text:line-break\s*/>#' => "\n", '#<text:s\s*/>#' => ' ']));
 		}
-		if (self::isTextNamed($name, $mime) || self::isPlainTextBytes($bytes)) {
+		if (!str_starts_with($bytes, '%PDF-') && (self::isTextNamed($name, $mime) || self::isPlainTextBytes($bytes))) {
 			$text = mb_scrub($bytes, 'UTF-8');
 			return str_starts_with($text, "\u{FEFF}") ? substr($text, 3) : $text;
 		}
@@ -241,16 +225,7 @@ class TextExtractor {
 		}
 	}
 
-	/**
-	 * Extracts the text of a PDF with smalot/pdfparser. Embedded images are not retained and the decode
-	 * memory is capped per stream, so a hostile or huge file cannot exhaust PHP memory. {@see PdfTextParser} reads the names of objects
-	 * stored in object streams, where ocrmypdf keeps the page that draws the Tesseract text layer.
-	 *
-	 * @param string $bytes raw PDF content, already within $limit
-	 * @param int $limit file ceiling of this read; the decode allowance is four times that, once, per stream
-	 * @return string plain text of all pages
-	 * @throws \Exception when the PDF cannot be parsed
-	 */
+	/** PDF parsing follows the native PHP memory ceiling rather than an MCP source-file quota. */
 	private function pdf(string $bytes, int $limit): string {
 		$config = new Config();
 		$config->setRetainImageContent(false);

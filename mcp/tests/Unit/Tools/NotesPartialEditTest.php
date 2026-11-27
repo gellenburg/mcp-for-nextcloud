@@ -399,12 +399,14 @@ final class NotesPartialEditTest extends TestCase {
 	}
 
 	/** The result counts against the note size limit. */
-	public function testAResultOverTheLimitIsRefusedBeforeWriting(): void {
+	public function testLargeAppendWorksAndStillChecksPlanState(): void {
 		$before = $this->content();
 		$big = str_repeat('x', NotesModule::MAX_BYTES);
-		$message = $this->refusal(fn () => $this->write(['id' => $this->id, 'append' => $big, 'etag' => $this->etag(), PlanState::ARGUMENT => 'x']));
-		$this->assertSame(NotesMessages::noteTooLarge(NotesModule::MAX_BYTES), $message);
+		$args = ['id' => $this->id, 'append' => $big];
+		$this->changedPlan(fn () => $this->write($args + ['etag' => $this->etag(), PlanState::ARGUMENT => 'x']));
 		$this->assertNothingWritten($before);
+		$this->approve($args);
+		$this->assertSame($before . $big, $this->content());
 	}
 
 	/** files_lock: the plan warns and the write is refused before anything changes. */

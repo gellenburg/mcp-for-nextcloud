@@ -127,10 +127,11 @@ final class MailAttachmentPreflightTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testTheMessageSizeIsTheBudget(): void {
+	public function testLargeMessageSizeDoesNotPreventAttachmentRead(): void {
 		$limit = MailBodyPreflight::MAX_MESSAGE_BYTES;
 		(new MailAttachmentPreflight())->check($this->client(self::mixed(), $limit)[0], 'INBOX', 9, '<m9@example.com>', '2');
-		$this->assertRefusal(MailAttachmentMessages::messageTooLarge($limit + 1, $limit), self::mixed(), '2', $limit + 1);
+		$part = (new MailAttachmentPreflight())->check($this->client(self::mixed(), $limit + 1)[0], 'INBOX', 9, '<m9@example.com>', '2');
+		$this->assertSame('2', $part->id);
 		$this->assertRefusal(MailAttachmentMessages::unavailable(), self::mixed(), '2', 0);
 		$this->assertRefusal(MailAttachmentMessages::unavailable(), self::mixed(), '2', null);
 	}

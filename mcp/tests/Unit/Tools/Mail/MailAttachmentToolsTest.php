@@ -83,7 +83,7 @@ final class MailAttachmentToolsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAPdfAttachmentIsRead(): void {
-		$structure = FakeMimePart::multipart('multipart/mixed', [new FakeMimePart('text/plain'), new FakeMimePart('application/octet-stream', 'scan.bin', 'attachment')]);
+		$structure = FakeMimePart::multipart('multipart/mixed', [new FakeMimePart('text/plain'), new FakeMimePart('application/octet-stream', 'scan.PDF', 'attachment')]);
 		$this->app->withMessage(1, ['id' => 8, 'structure' => $structure, 'attachmentContents' => ['2' => AttachmentSamples::pdf('Invoice 42')]]);
 		$attachment = $this->call(['message_id' => 8, 'attachment_id' => '2'])['attachment'];
 		$this->assertSame('pdf', $attachment['kind']);
@@ -152,18 +152,20 @@ final class MailAttachmentToolsTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testOversizedAndSealedMessagesAreRefusedWithoutContent(): void {
+	public function testLargeAttachmentsAreAdmittedButSealedMessagesRemainRefused(): void {
 		$limit = MailBodyPreflight::MAX_MESSAGE_BYTES;
 		$this->app->withMessage(1, ['id' => 40, 'size' => $limit + 1, 'structure' => self::withCsv(), 'attachmentContents' => ['2' => 'x']]);
-		$this->assertSame(MailAttachmentMessages::messageTooLarge($limit + 1, $limit), $this->failure(['message_id' => 40, 'attachment_id' => '2']));
+		$this->assertSame('x', $this->call(['message_id' => 40, 'attachment_id' => '2'])['attachment']['text']);
+		$this->app->journal->exchangeArray([]);
 		$sealed = FakeMimePart::single(new FakeMimePart('application/pkcs7-mime', 'smime.p7m', 'attachment'));
 		$this->app->withMessage(1, ['id' => 41, 'structure' => $sealed, 'attachmentContents' => ['1' => 'x']]);
 		$this->assertSame(MailAttachmentMessages::encrypted(), $this->failure(['message_id' => 41, 'attachment_id' => '1']));
-		$this->assertNotContains('imap:attachment:2', $this->app->imapCommands());
 		$this->assertNotContains('imap:attachment:1', $this->app->imapCommands());
-
-		$this->app->withMessage(1, ['id' => 42, 'structure' => self::withCsv(), 'attachmentContents' => ['2' => str_repeat('a', MailAttachmentReader::MAX_ATTACHMENT_BYTES + 1)]]);
-		$this->assertSame(MailAttachmentMessages::attachmentTooLarge(MailAttachmentReader::MAX_ATTACHMENT_BYTES), $this->failure(['message_id' => 42, 'attachment_id' => '2']));
+		$body = str_repeat('a', MailAttachmentReader::MAX_ATTACHMENT_BYTES + 1);
+		$this->app->withMessage(1, ['id' => 42, 'structure' => self::withCsv(), 'attachmentContents' => ['2' => $body]]);
+		$result = $this->call(['message_id' => 42, 'attachment_id' => '2', 'max_chars' => 4])['attachment'];
+		$this->assertSame('aaaa', $result['text']);
+		$this->assertSame(strlen($body), $result['totalChars']);
 	}
 
 	/**
