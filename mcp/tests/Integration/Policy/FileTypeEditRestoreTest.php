@@ -15,7 +15,6 @@ use OCA\Mcp\Tests\Integration\IntegrationTestCase;
 use OCA\Mcp\Tests\Integration\Support\DavClient;
 use OCA\Mcp\Tests\Integration\Support\LoginFactory;
 use OCA\Mcp\Tests\Integration\Support\McpClient;
-use OCA\Mcp\Tests\Integration\Support\ToolReply;
 use OCA\Mcp\Modules\Files\Backups\FileBackup;
 use OCP\Config\IUserConfig;
 use OCP\Files\File;
@@ -26,10 +25,10 @@ use OCP\IConfig;
 use OCP\Server;
 
 /**
- * File-type policy on files_edit, files_replace and files_version_restore against a real server.
+ * Native admission on files_edit, files_replace and files_version_restore against a real server.
  *
  * The folder of each test stays in the user's tree, and so does every backup. Nothing created here is deleted.
- * Grants and the policy key are put back. Mode off is an absent key. confirm and the admin uid do not bypass the rule.
+ * Grants and the legacy policy key are put back. Native permission and backup rules are unchanged.
  */
 final class FileTypeEditRestoreTest extends IntegrationTestCase {
 	private const ADMIN = 'admin';
@@ -159,7 +158,12 @@ final class FileTypeEditRestoreTest extends IntegrationTestCase {
 	 * @return void
 	 */
 	private function allow(string ...$extensions): void {
-		Server::get(FileWritePolicy::class)->save('allowlist', array_values($extensions), false);
+		$config = Server::get(IAppConfig::class);
+		$config->setValueString(FileWritePolicy::APP, FileWritePolicy::KEY, json_encode([
+			'version' => 1, 'mode' => 'allowlist', 'extensions' => array_values($extensions),
+			'allowExtensionless' => false,
+		], JSON_THROW_ON_ERROR), false);
+		$config->clearCache(false);
 	}
 
 	/**
@@ -257,20 +261,6 @@ final class FileTypeEditRestoreTest extends IntegrationTestCase {
 	}
 
 	/**
-	 * A refusal is a tool error or a JSON-RPC error, and it does not reveal the allowlist.
-	 *
-	 * @param ToolReply $reply Answer of the call.
-	 * @param string $label What was refused.
-	 * @return void
-	 */
-	private function assertRefused(ToolReply $reply, string $label): void {
-		$this->assertTrue($reply->isError() || isset($reply->body['error']), $label . ': ' . $reply->describe());
-		$this->assertFalse($reply->ok(), $label);
-		$this->assertStringNotContainsString('allowlist', $reply->raw, $label);
-		$this->assertStringNotContainsString('"extensions"', $reply->raw, $label);
-	}
-
-	/**
 	 * An allowed a.txt is edited and replaced. Each write leaves a verified backup of the previous bytes.
 	 *
 	 * @return void
@@ -293,36 +283,30 @@ final class FileTypeEditRestoreTest extends IntegrationTestCase {
 		$this->assertBackupHolds(Fixtures::ALICE, $replace->json()['backup'] ?? null, 'beta');
 	}
 
-	/**
-	 * note.md is text, so an allowlist of txt refuses it without a backup. Removing the key turns the rule off.
-	 *
-	 * @return void
-	 */
-	public function testDeniedMarkdownEditLeavesNoBackupAndAnAbsentKeyAllowsIt(): void {
+	/** An unlisted text extension is editable with a verified backup and side-effect-free planning. */
+	public function testMarkdownEditIgnoresLegacyAllowlistAndKeepsBackup(): void {
 		$this->allow('txt');
 		$this->dav->put($this->folder . '/note.md', 'keep');
 		$etag = $this->etag(Fixtures::ALICE, 'note.md');
 		$backups = $this->backupNames(Fixtures::ALICE);
-		$refused = $this->mcp->write('files_edit', ['path' => $this->path('note.md'), 'content' => 'changed']);
-		$this->assertRefused($refused, 'edit of note.md');
+		$args = ['path' => $this->path('note.md'), 'content' => 'changed'];
+		$plan = $this->mcp->tool('files_edit', $args);
+		$this->assertTrue($plan->ok(), $plan->describe());
 		$this->assertSame('keep', $this->content(Fixtures::ALICE, 'note.md'));
 		$this->assertSame($etag, $this->etag(Fixtures::ALICE, 'note.md'));
 		$this->assertSame($backups, $this->backupNames(Fixtures::ALICE));
-
-		$apps = Server::get(IAppConfig::class);
-		$apps->deleteKey(FileWritePolicy::APP, FileWritePolicy::KEY);
-		$apps->clearCache(false);
-		$edit = $this->mcp->write('files_edit', ['path' => $this->path('note.md'), 'content' => 'changed']);
+		$edit = $this->mcp->write('files_edit', $args);
 		$this->assertTrue($edit->ok(), $edit->describe());
 		$this->assertSame('changed', $this->content(Fixtures::ALICE, 'note.md'));
+		$this->assertBackupHolds(Fixtures::ALICE, $edit->json()['backup'] ?? null, 'keep');
 	}
 
 	/**
-	 * The plan is accepted, then the policy changes. The confirmed call does not write.
+	 * Changing the obsolete policy after planning cannot revoke native admission.
 	 *
 	 * @return void
 	 */
-	public function testPolicyChangeAfterThePlanRefusesConfirmation(): void {
+	public function testLegacyPolicyChangeDoesNotRevokeConfirmation(): void {
 		$this->allow('txt');
 		$this->dav->put($this->folder . '/a.txt', 'alpha');
 		$etag = $this->etag(Fixtures::ALICE, 'a.txt');
@@ -335,39 +319,35 @@ final class FileTypeEditRestoreTest extends IntegrationTestCase {
 
 		$this->allow('md');
 		$write = $this->mcp->write('files_edit', ['path' => $this->path('a.txt'), 'content' => 'beta']);
-		$this->assertRefused($write, 'confirm after the policy change');
-		$this->assertSame('alpha', $this->content(Fixtures::ALICE, 'a.txt'));
-		$this->assertSame($etag, $this->etag(Fixtures::ALICE, 'a.txt'));
-		$this->assertSame($backups, $this->backupNames(Fixtures::ALICE));
+		$this->assertTrue($write->ok(), $write->describe());
+		$this->assertSame('beta', $this->content(Fixtures::ALICE, 'a.txt'));
+		$this->assertBackupHolds(Fixtures::ALICE, $write->json()['backup'] ?? null, 'alpha');
 	}
 
 	/**
-	 * The admin uid does not bypass the policy. The file is the admin's own, not alice's.
+	 * The admin's own file follows the same native admission and backup contract.
 	 *
 	 * @return void
 	 */
-	public function testAdminCannotOverrideThePolicyOnTheirOwnFile(): void {
+	public function testAdminOwnFileUsesNativeAdmission(): void {
 		$this->allow('txt');
 		$login = LoginFactory::basic(self::ADMIN);
 		$dav = new DavClient($login);
 		$mcp = new McpClient($login);
 		$dav->mkcol($this->folder);
 		$dav->put($this->folder . '/note.md', 'admin note');
-		$etag = $this->etag(self::ADMIN, 'note.md');
-		$backups = $this->backupNames(self::ADMIN);
 		$reply = $mcp->write('files_edit', ['path' => $this->path('note.md'), 'content' => 'changed']);
-		$this->assertRefused($reply, 'admin edit');
-		$this->assertSame('admin note', $this->content(self::ADMIN, 'note.md'));
-		$this->assertSame($etag, $this->etag(self::ADMIN, 'note.md'));
-		$this->assertSame($backups, $this->backupNames(self::ADMIN));
+		$this->assertTrue($reply->ok(), $reply->describe());
+		$this->assertSame('changed', $this->content(self::ADMIN, 'note.md'));
+		$this->assertBackupHolds(self::ADMIN, $reply->json()['backup'] ?? null, 'admin note');
 	}
 
 	/**
-	 * Two later edits create versions. Tightening the policy so txt is forbidden refuses the restore.
+	 * Two later edits create versions. A legacy allowlist cannot prevent restoring a previous version.
 	 *
 	 * @return void
 	 */
-	public function testRestoreOfAForbiddenCurrentNameLeavesBytesEtagAndBackups(): void {
+	public function testRestoreIgnoresLegacyAllowlistAndBacksUpCurrentBytes(): void {
 		$this->allow('txt');
 		$this->dav->put($this->folder . '/a.txt', 'alpha');
 		sleep(2);
@@ -376,25 +356,32 @@ final class FileTypeEditRestoreTest extends IntegrationTestCase {
 		sleep(2);
 		$gamma = $this->mcp->write('files_edit', ['path' => $this->path('a.txt'), 'content' => 'gamma']);
 		$this->assertTrue($gamma->ok(), $gamma->describe());
-		$etag = $this->etag(Fixtures::ALICE, 'a.txt');
-		$backups = $this->backupNames(Fixtures::ALICE);
 		$versions = $this->mcp->tool('files_versions_list', ['path' => $this->path('a.txt')]);
 		$this->assertTrue($versions->ok(), $versions->describe());
 		$entries = $versions->json()['versions'] ?? null;
 		$this->assertIsArray($entries);
 		$this->assertNotEmpty($entries, $versions->describe());
-		$revision = (string)($entries[0]['revision'] ?? '');
-		$this->assertNotSame('', $revision);
+		$revision = null;
+		foreach ($entries as $entry) {
+			$stored = $this->mcp->tool('files_version_read', [
+				'path' => $this->path('a.txt'), 'version' => (string)$entry['revision'],
+			]);
+			$this->assertTrue($stored->ok(), $stored->describe());
+			if (($stored->json()['text'] ?? null) === 'beta') {
+				$revision = (string)$entry['revision'];
+				break;
+			}
+		}
+		$this->assertIsString($revision, $versions->describe());
 
 		$this->allow('md');
 		$restore = $this->mcp->write('files_version_restore', [
 			'path' => $this->path('a.txt'),
 			'version' => $revision,
 		]);
-		$this->assertRefused($restore, 'restore of a.txt');
-		$this->assertSame('gamma', $this->content(Fixtures::ALICE, 'a.txt'));
-		$this->assertSame($etag, $this->etag(Fixtures::ALICE, 'a.txt'));
-		$this->assertSame($backups, $this->backupNames(Fixtures::ALICE));
+		$this->assertTrue($restore->ok(), $restore->describe());
+		$this->assertSame('beta', $this->content(Fixtures::ALICE, 'a.txt'));
+		$this->assertBackupHolds(Fixtures::ALICE, $restore->json()['backup'] ?? null, 'gamma');
 	}
 
 	/**
@@ -466,21 +453,20 @@ final class FileTypeEditRestoreTest extends IntegrationTestCase {
 	}
 
 	/**
-	 * A stored value that is not a policy refuses the edit. The bytes stay.
+	 * Malformed legacy configuration is ignored and preserved for rollback.
 	 *
 	 * @return void
 	 */
-	public function testUnavailablePolicyRefusesTheEdit(): void {
+	public function testMalformedLegacyPolicyDoesNotPreventEdit(): void {
 		$this->dav->put($this->folder . '/a.txt', 'alpha');
-		$etag = $this->etag(Fixtures::ALICE, 'a.txt');
-		$backups = $this->backupNames(Fixtures::ALICE);
 		$apps = Server::get(IAppConfig::class);
 		$apps->setValueString(FileWritePolicy::APP, FileWritePolicy::KEY, '{', false);
 		$apps->clearCache(false);
 		$reply = $this->mcp->write('files_edit', ['path' => $this->path('a.txt'), 'content' => 'beta']);
-		$this->assertRefused($reply, 'unavailable policy');
-		$this->assertSame('alpha', $this->content(Fixtures::ALICE, 'a.txt'));
-		$this->assertSame($etag, $this->etag(Fixtures::ALICE, 'a.txt'));
-		$this->assertSame($backups, $this->backupNames(Fixtures::ALICE));
+		$this->assertTrue($reply->ok(), $reply->describe());
+		$this->assertSame('beta', $this->content(Fixtures::ALICE, 'a.txt'));
+		$this->assertBackupHolds(Fixtures::ALICE, $reply->json()['backup'] ?? null, 'alpha');
+		$apps->clearCache(false);
+		$this->assertSame('{', $apps->getValueString(FileWritePolicy::APP, FileWritePolicy::KEY));
 	}
 }
