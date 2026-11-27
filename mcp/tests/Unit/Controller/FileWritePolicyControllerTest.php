@@ -44,20 +44,21 @@ final class FileWritePolicyControllerTest extends TestCase {
 	}
 
 	/** A save responds with canonical data verified by a fresh service read. */
-	public function testSaveReturnsCanonicalReadBack(): void {
+	public function testLegacySaveReturnsUnrestrictedEffectivePolicyWithoutWriting(): void {
 		$store = new InMemoryAppConfig();
-		$body = ['mode' => 'allowlist', 'extensions' => ".TXT,md\n", 'allowExtensionless' => true];
+		$body = ['mode' => 'allowlist', 'extensions' => ".TXT,md\n", 'allowExtensionless' => false];
 		$response = $this->controller($store->worker($this), $body)->update();
 		self::assertSame(200, $response->getStatus());
-		self::assertSame(['md', 'txt'], $response->getData()['extensions']);
-		self::assertSame(1, $store->cacheClears);
+		self::assertSame(FileWritePolicy::defaults(), $response->getData());
+		self::assertSame(0, $store->cacheClears);
+		self::assertSame([], $store->stored);
 		self::assertSame($response->getData(), $this->controller($store->worker($this))->show()->getData());
 	}
 
 	/** Invalid fields cannot change a valid existing configuration. */
 	public function testInvalidFieldsReturn400WithoutWriting(): void {
 		$valid = ['mode' => 'allowlist', 'extensions' => ['md'], 'allowExtensionless' => false];
-		foreach (['mode' => [null, 1, 'denylist'], 'extensions' => [null, 1, 'a,,b', ['path' => 'txt'], ['*']], 'allowExtensionless' => [null, 1, 'true']] as $field => $values) {
+		foreach (['mode' => [null, 1, 'denylist'], 'extensions' => [null, 1], 'allowExtensionless' => [null, 1, 'true']] as $field => $values) {
 			foreach ($values as $value) {
 				$store = new InMemoryAppConfig();
 				$store->stored = ['mcp' => [FileWritePolicy::KEY => json_encode(FileWritePolicy::defaults())]];
@@ -71,14 +72,14 @@ final class FileWritePolicyControllerTest extends TestCase {
 	}
 
 	/** Neither failed reads nor unverified writes return off/saved or backend details. */
-	public function testUnreadableAndUnverifiedStateIsExplicit(): void {
+	public function testUnreadableLegacyStateDoesNotChangeEffectivePolicy(): void {
 		$config = $this->createMock(IAppConfig::class);
-		$config->method('hasKey')->willReturn(true);
-		$config->method('getValueString')->willReturn('secret broken json');
+		$config->expects(self::never())->method('getValueString');
+		$config->expects(self::never())->method('setValueString');
 		$controller = $this->controller($config, ['mode' => 'off', 'extensions' => [], 'allowExtensionless' => false]);
 		foreach ([$controller->show(), $controller->update()] as $response) {
-			self::assertSame(503, $response->getStatus());
-			self::assertSame(['error' => 'policy_unavailable'], $response->getData());
+			self::assertSame(200, $response->getStatus());
+			self::assertSame(FileWritePolicy::defaults(), $response->getData());
 		}
 	}
 }

@@ -18,17 +18,12 @@ use PHPUnit\Framework\TestCase;
 /** Typed config repair owns one transaction, preserves D9 on rollback and never exposes an absent committed key. */
 final class FileWritePolicyRecoveryTest extends TestCase {
 	/** Recovery succeeds through the admin service entry, without deleting anything outside the transaction. */
-	public function testTypedConfigurationCanBeRecoveredWithoutTerminal(): void {
+	public function testTypedLegacyConfigurationIsPreservedWithoutRepair(): void {
 		[$policy, $state] = $this->fixture();
-		try {
-			$policy->current();
-			self::fail('Wrongly typed policy accepted');
-		} catch (FileWritePolicyUnavailable) {
-			self::assertSame(7, $state->stored);
-		}
-		$saved = $policy->save('allowlist', ['txt'], false);
-		self::assertSame($saved, $policy->current());
-		self::assertSame(['begin', 'delete', 'set', 'commit'], $state->events);
+		self::assertSame(FileWritePolicy::defaults(), $policy->current());
+		self::assertSame(FileWritePolicy::defaults(), $policy->save('allowlist', ['txt'], false));
+		self::assertSame(7, $state->stored);
+		self::assertSame([], $state->events);
 		self::assertFalse($state->active);
 	}
 
@@ -41,33 +36,25 @@ final class FileWritePolicyRecoveryTest extends TestCase {
 
 	/** @param string $stage Failure before a successful commit. */
 	#[DataProvider('failures')]
-	public function testFailedRepairKeepsThePreviousD9State(string $stage): void {
+	public function testLegacyRepairIsNeverAttempted(string $stage): void {
 		[$policy, $state] = $this->fixture($stage);
-		try {
-			$policy->save('allowlist', ['txt'], false);
-			self::fail('Failed repair reported success');
-		} catch (FileWritePolicyUnavailable $e) {
-			self::assertNull($e->getPrevious());
-		}
+		self::assertSame(FileWritePolicy::defaults(), $policy->save('allowlist', ['txt'], false));
 		self::assertSame(7, $state->stored);
 		self::assertFalse($state->active);
-		self::assertContains('rollback', $state->events);
-		$this->expectException(FileWritePolicyUnavailable::class);
-		$policy->current();
+		self::assertSame([], $state->events);
 	}
 
 	/** An outer transaction is never committed, rolled back or modified by this repair. */
-	public function testRepairRefusesToOwnAnOuterTransaction(): void {
+	public function testLegacySettingsNeverTouchAnOuterTransaction(): void {
 		$config = $this->createMock(IAppConfig::class);
-		$config->method('setValueString')->willThrowException(new AppConfigTypeConflictException());
+		$config->expects(self::never())->method('setValueString');
 		$config->expects(self::never())->method('deleteKey');
 		$db = $this->createMock(IDBConnection::class);
 		$db->method('inTransaction')->willReturn(true);
 		$db->expects(self::never())->method('beginTransaction');
 		$db->expects(self::never())->method('rollBack');
 		$db->expects(self::never())->method('commit');
-		$this->expectException(FileWritePolicyUnavailable::class);
-		(new FileWritePolicy($config, $db))->save('off', [], false);
+		self::assertSame(FileWritePolicy::defaults(), (new FileWritePolicy($config, $db))->save('off', [], false));
 	}
 
 	/**

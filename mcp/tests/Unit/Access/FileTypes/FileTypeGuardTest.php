@@ -49,14 +49,11 @@ final class FileTypeGuardTest extends TestCase {
 	 */
 	#[DataProvider('names')]
 	public function testNameTable(string $name, bool $extensionless, bool $allowed): void {
+		// Neither legacy allowlist membership nor the extensionless toggle is an MCP admission rule.
+		// PathGuard and native Nextcloud filename validation remain independent boundaries.
 		$guard = $this->guard('allowlist', ['json', 'md', 'txt'], $extensionless);
-		if (!$allowed) {
-			$this->expectException(FileTypeDenied::class);
-		}
 		$guard->assertWritableName($name);
-		if ($allowed) {
-			self::assertTrue(true);
-		}
+		self::assertFalse($guard->snapshot()->isActive());
 	}
 
 	/** Off adds no restriction to names Nextcloud or a tool may independently reject. */
@@ -69,43 +66,28 @@ final class FileTypeGuardTest extends TestCase {
 	}
 
 	/** The same guard re-reads policy between checks, including links created under an earlier policy. */
-	public function testTheSameGuardObservesAPolicyChange(): void {
+	public function testTheSameGuardIgnoresLegacyPolicyChanges(): void {
 		$config = $this->createMock(IAppConfig::class);
-		$config->method('hasKey')->willReturn(true);
-		$config->expects(self::exactly(2))->method('clearCache')->with(false);
-		$off = FileWritePolicy::defaults();
-		$on = $off;
-		$on['mode'] = 'allowlist';
-		$config->method('getValueString')->willReturnOnConsecutiveCalls(json_encode($off), json_encode($on));
-		$guard = new FileTypeGuard(new FileWritePolicy($config, $this->createMock(\OCP\IDBConnection::class)));
+		$config->expects(self::never())->method('getValueString');
+		$policy = new FileWritePolicy($config, $this->createMock(\OCP\IDBConnection::class));
+		$guard = new FileTypeGuard($policy);
 		$guard->assertWritableName('a.php');
-		$this->expectException(FileTypeDenied::class);
+		$policy->save('allowlist', ['txt'], false);
 		$guard->assertWritableName('a.php');
+		self::assertFalse($guard->snapshot()->isActive());
 	}
 
 	/** A preflight shares one immutable policy; a fresh sink/confirmation boundary sees the next policy. */
-	public function testOneSnapshotReadsOnceForManyNames(): void {
+	public function testManyNamesRequireNoLegacyConfigurationReads(): void {
 		$config = $this->createMock(IAppConfig::class);
-		$config->method('hasKey')->willReturn(true);
-		$clears = 0;
-		$config->expects(self::exactly(2))->method('clearCache')->with(false)->willReturnCallback(static function () use (&$clears): void { $clears++; });
-		$config->expects(self::exactly(2))->method('hasKey')->with('mcp', FileWritePolicy::KEY, null)->willReturn(true);
-		$on = FileWritePolicy::defaults();
-		$on['mode'] = 'allowlist';
-		$on['extensions'] = ['txt'];
-		$changed = $on;
-		$changed['extensions'] = [];
-		$config->expects(self::exactly(2))->method('getValueString')->willReturnOnConsecutiveCalls(json_encode($on), json_encode($changed));
+		$config->expects(self::never())->method('clearCache');
+		$config->expects(self::never())->method('getValueString');
 		$guard = new FileTypeGuard(new FileWritePolicy($config, $this->createMock(\OCP\IDBConnection::class)));
 		$check = $guard->snapshot();
 		foreach (range(1, 2000) as $i) {
-			$check->assertWritableName('file-' . $i . '.txt');
+			$check->assertWritableName('file-' . $i . '.custom');
 		}
-		self::assertSame(1, $clears, 'Two thousand names must invalidate the cache exactly once for their shared boundary.');
-		$nextBoundary = $guard->snapshot();
-		$check->assertWritableName('still-the-original-snapshot.txt');
-		$this->expectException(FileTypeDenied::class);
-		$nextBoundary->assertWritableName('file.txt');
+		self::assertFalse($check->isActive());
 	}
 
 	/** A dot in a resolved parent directory is not part of the basename's extension. */
@@ -115,32 +97,28 @@ final class FileTypeGuardTest extends TestCase {
 	}
 
 	/** An empty allowlist denies extensions; the explicit no-extension option is independent. */
-	public function testEmptyListNeverMeansOff(): void {
-		$this->guard('allowlist', [], true)->assertWritableName('README');
-		$this->expectException(FileTypeDenied::class);
-		$this->guard('allowlist', [], true)->assertWritableName('a.txt');
+	public function testEmptyLegacyAllowlistStillAllowsEveryExtension(): void {
+		$guard = $this->guard('allowlist', [], false);
+		foreach (['README', '.env', 'a.txt', 'project.skribisto', 'chapter.md,v'] as $name) {
+			$guard->assertWritableName($name);
+		}
+		self::assertFalse($guard->snapshot()->isActive());
 	}
 
 	/** Invalid configuration is a distinct tool failure and does not use last-known or default policy. */
-	public function testConfigurationFailureIsDistinctFromANameRefusal(): void {
+	public function testInvalidLegacyConfigurationDoesNotBecomeAnAdmissionFailure(): void {
 		$config = $this->createMock(IAppConfig::class);
-		$config->method('hasKey')->willReturn(true);
-		$config->method('getValueString')->willReturn('invalid');
-		$this->expectException(FileWritePolicyUnavailable::class);
-		(new FileTypeGuard(new FileWritePolicy($config, $this->createMock(\OCP\IDBConnection::class))))->assertWritableName('a.txt');
+		$config->expects(self::never())->method('getValueString');
+		$guard = new FileTypeGuard(new FileWritePolicy($config, $this->createMock(\OCP\IDBConnection::class)));
+		$guard->assertWritableName('a.txt');
+		self::assertFalse($guard->snapshot()->isActive());
 	}
 
 	/** The type, not localized text, lets HTTP callers distinguish 403 from policy unavailability. */
-	public function testRefusalDoesNotExposeTheNameOrPolicy(): void {
-		try {
-			$this->guard('allowlist', ['md'])->assertWritableName('private-secret.php');
-			self::fail('Blocked extension accepted');
-		} catch (FileTypeDenied $e) {
-			self::assertInstanceOf(ToolFailure::class, $e);
-			self::assertSame(FileTypeMessages::denied(), $e->getMessage());
-			self::assertStringNotContainsString('private-secret', $e->getMessage());
-			self::assertStringNotContainsString('md', $e->getMessage());
-		}
+	public function testLegacyDeniedExtensionIsAllowedWithoutReportingAFalseDenial(): void {
+		$guard = $this->guard('allowlist', ['md']);
+		$guard->assertWritableName('private-secret.php');
+		self::assertFalse($guard->snapshot()->isActive());
 	}
 
 	/** Each new literal is translated in all shipped catalogs, whose JS and JSON entries agree. */
