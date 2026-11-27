@@ -197,7 +197,9 @@ class TextExtractor {
 			throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\ReadingMessages::openFailed());
 		}
 		try {
-			$bytes = stream_get_contents($handle, $limit + 1);
+			$bytes = $limit === FileReadLimit::NATIVE_ONLY
+				? stream_get_contents($handle)
+				: stream_get_contents($handle, $limit + 1);
 		} finally {
 			fclose($handle);
 		}
@@ -244,7 +246,12 @@ class TextExtractor {
 	private function pdf(string $bytes, int $limit): string {
 		$config = new Config();
 		$config->setRetainImageContent(false);
-		$config->setDecodeMemoryLimit($limit * 4);
+		// Decompression is a parser operation, not a source-file size policy.
+		// Respect PHP's actual memory ceiling; avoid overflowing the unlimited integer sentinel.
+		$phpMemory = $this->readLimit->phpMaxBytes();
+		$config->setDecodeMemoryLimit($limit === FileReadLimit::NATIVE_ONLY
+			? ($phpMemory > 0 ? $phpMemory : PHP_INT_MAX)
+			: min(PHP_INT_MAX, $limit > intdiv(PHP_INT_MAX, 4) ? PHP_INT_MAX : $limit * 4));
 		$document = (new PdfTextParser([], $config))->parseContent($bytes);
 		PdfSupplementaryCharacters::restore($document);
 		return $document->getText();
@@ -270,11 +277,23 @@ class TextExtractor {
 				$stat = $zip->statName($entry);
 				// The declared size guards against zip bombs; the read length caps a lying header.
 				// This cap stays fixed when the administrator raises the file-read ceiling.
-				$zipLimit = FileReadLimit::ZIP_ENTRY_MAX_BYTES;
-				if ($stat === false || $stat['size'] > $zipLimit) {
-					throw new \RuntimeException('entry missing or too large');
+				$phpMemory = $this->readLimit->phpMaxBytes();
+				$available = $phpMemory > 0 ? max(0, $phpMemory - memory_get_usage(true)) : null;
+				if ($stat === false || ($available !== null && $stat['size'] > $available)) {
+					throw new \RuntimeException('entry missing or exceeds native memory');
 				}
-				$xml = $zip->getFromName($entry, $zipLimit);
+				$stream = $zip->getStream($entry);
+				if ($stream === false) {
+					throw new \RuntimeException('entry unreadable');
+				}
+				try {
+					$xml = $available === null ? stream_get_contents($stream) : stream_get_contents($stream, $available + 1);
+				} finally {
+					fclose($stream);
+				}
+				if ($xml === false || ($available !== null && strlen($xml) > $available)) {
+					throw new \RuntimeException('entry exceeds native memory');
+				}
 			} finally {
 				$zip->close();
 			}

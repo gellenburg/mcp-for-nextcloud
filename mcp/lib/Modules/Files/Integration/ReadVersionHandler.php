@@ -72,7 +72,12 @@ final class ReadVersionHandler {
 		}
 		$limit = $this->extractor->maxFileBytes();
 		try {
-			$bytes = (string)stream_get_contents($handle, $limit + 1);
+			$bytes = $limit === \OCA\Mcp\Modules\Files\Extraction\FileReadLimit::NATIVE_ONLY
+				? stream_get_contents($handle)
+				: stream_get_contents($handle, $limit + 1);
+			if ($bytes === false) {
+				throw new ToolFailure(VersionMessages::versionUnreadable());
+			}
 		} finally {
 			fclose($handle);
 		}

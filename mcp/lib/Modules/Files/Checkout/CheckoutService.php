@@ -28,6 +28,8 @@ use OCP\IURLGenerator;
  * inside the URLs.
  */
 final class CheckoutService {
+	/** Integer compatibility sentinel; raw PUT/POST admission belongs to Nextcloud/PHP/web server. */
+	public const NATIVE_ONLY = PHP_INT_MAX - 1;
 	/** Lifetime of a download link, in seconds. */
 	public const DOWNLOAD_TTL = 300;
 	/** Lifetime of an upload link, in seconds. */
@@ -205,9 +207,7 @@ final class CheckoutService {
 	 * @return int effective upload limit in bytes: the configured one, never above what php.ini accepts
 	 */
 	public function maxBytes(): int {
-		$limit = $this->configuredMaxBytes();
-		$post = $this->phpMaxBytes();
-		return $post > 0 ? min($limit, $post) : $limit;
+		return self::NATIVE_ONLY;
 	}
 
 	/** @return int upload limit the administrator set, in bytes; DEFAULT_MAX_BYTES when none or an invalid one is stored */

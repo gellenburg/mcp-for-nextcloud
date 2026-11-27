@@ -240,13 +240,13 @@ class ResourceRegistry {
 				];
 			}
 
-			$size = (int)$node->getSize();
-			if ($size > self::MAX_BLOB_BYTES) {
-				throw new ToolFailure(BinaryResourceMessages::binaryResourceTooLarge(self::MAX_BLOB_BYTES));
-			}
+			// Unknown file types are not refused by a size or extension policy.
 			$bytes = (string)$node->getContent();
-			if (strlen($bytes) > self::MAX_BLOB_BYTES) {
-				throw new ToolFailure(BinaryResourceMessages::binaryResourceTooLarge(self::MAX_BLOB_BYTES));
+			if (mb_check_encoding($bytes, 'UTF-8') && preg_match('/[\x00-\x08\x0E-\x1F\x7F]/', $bytes) === 0) {
+				$text = str_starts_with($bytes, "\u{FEFF}") ? substr($bytes, 3) : $bytes;
+				return ['contents' => [['uri' => $uri, 'mimeType' => 'text/plain',
+					'text' => mb_strlen($text) > self::MAX_TEXT_CHARS
+						? mb_substr($text, 0, self::MAX_TEXT_CHARS) . "\n\n[content truncated]" : $text]]];
 			}
 			return [
 				'contents' => [
