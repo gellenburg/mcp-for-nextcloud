@@ -126,9 +126,6 @@ final class NoteChange {
 			UniqueSnippet::assertText((string)$arguments['old']);
 			$updated = UniqueSnippet::replace($current, (string)$arguments['old'], (string)$arguments['new']);
 		}
-		if (strlen($updated) > NotesRepository::MAX_BYTES) {
-			throw new ToolFailure(NotesMessages::noteTooLarge(NotesRepository::MAX_BYTES));
-		}
 		return $updated;
 	}
 

@@ -35,6 +35,8 @@ use OCP\IConfig;
  * file limit cannot inflate one DOCX or ODT entry without bound.
  */
 final class FileReadLimit {
+	/** Integer compatibility sentinel, not an application-level file size limit. */
+	public const NATIVE_ONLY = PHP_INT_MAX - 1;
 	/** File-read ceiling used when the administrator configured none, in bytes. */
 	public const DEFAULT_MAX_BYTES = 20 * 1024 * 1024;
 	/** Largest zip entry inflated from a DOCX or ODT, in bytes. Independent of the file ceiling. */
@@ -71,7 +73,8 @@ final class FileReadLimit {
 	 * @return int effective file-read ceiling in bytes
 	 */
 	public function maxBytes(): int {
-		return self::effective($this->configuredMaxBytes(), $this->memory->value());
+		// Legacy settings are retained for rollback, but never restrict this fork's file reads.
+		return self::NATIVE_ONLY;
 	}
 
 	/**

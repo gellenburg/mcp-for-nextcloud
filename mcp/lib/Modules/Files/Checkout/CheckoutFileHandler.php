@@ -77,7 +77,7 @@ final class CheckoutFileHandler {
 			'mime' => (string)$file->getMimetype(),
 			'downloadTtlSeconds' => CheckoutService::DOWNLOAD_TTL,
 			'uploadTtlSeconds' => CheckoutService::UPLOAD_TTL,
-			'uploadMaxBytes' => $this->checkout->maxBytes(),
+			'uploadMaxBytes' => null,
 			'backup' => '/' . \OCA\Mcp\Platform\Backups\BackupLocation::LEGACY,
 			'access' => $this->accessInfo->describe($file, $userId),
 			'shared' => $shared === null ? [] : [$shared],

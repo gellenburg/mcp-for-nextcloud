@@ -78,7 +78,9 @@ final class BodyReader {
 			return null;
 		}
 		try {
-			$copied = stream_copy_to_stream($input, $output, $limit + self::BODY_SLACK);
+			$copied = $limit === CheckoutService::NATIVE_ONLY
+				? stream_copy_to_stream($input, $output)
+				: stream_copy_to_stream($input, $output, $limit + self::BODY_SLACK);
 		} finally {
 			fclose($input);
 			fclose($output);

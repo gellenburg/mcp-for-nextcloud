@@ -25,11 +25,7 @@ final class CreationMessages {
 
 	/** @return string description of files_create, read by the model and therefore fixed English */
 	public static function createTool(): string {
-		return 'Create a NEW small text file with its content inline: ' . implode(', ', array_map(
-			static fn (string $extension): string => '.' . $extension, \OCA\Mcp\Modules\Files\Creation\FileCreation::TEXT_EXTENSIONS))
-			. ', up to 1 MB of UTF-8. Never overwrites a file with content: an existing name is refused (use files_edit or files_checkout '
-			. 'to change it). For any other type or a larger file use files_upload. The folder must exist '
-			. '(files_mkdir creates it); outside your personal folder ask the user and retry with confirm_shared.';
+		return 'Create a NEW file containing UTF-8 text, with any native-valid filename, including unknown extensions and extensionless names. No MCP byte ceiling. Never overwrites an occupied file; use files_edit or files_checkout. For binary bytes use files_upload. The destination folder must exist. Set confirm: false for a dry run.';
 	}
 
 	/** @return string description of the path of files_upload and files_create */
@@ -39,12 +35,12 @@ final class CreationMessages {
 
 	/** @return string description of the size argument of files_upload */
 	public static function uploadSize(): string {
-		return 'Size of the local file in bytes, optional: a size over the upload limit is refused before any link is issued';
+		return 'Size of the local file in bytes, optional; native storage and transport limits apply';
 	}
 
 	/** @return string description of the content argument of files_create */
 	public static function createContent(): string {
-		return 'Complete text of the new file, up to 1 MB of UTF-8';
+		return 'Complete UTF-8 text of the new file; no MCP file-size limit';
 	}
 
 	/** @return string the plan of files_upload */

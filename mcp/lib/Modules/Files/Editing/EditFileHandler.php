@@ -72,9 +72,6 @@ final class EditFileHandler {
 	public function plan(Folder $root, string $userId, string $path, string $content, ?string $etag): array {
 		$path = PathGuard::normalize($path);
 		$this->assertEditable($root, $path);
-		if (strlen($content) > FilesModule::MAX_EDIT_BYTES) {
-			throw new ToolFailure(EditingMessages::editTooLarge(FilesModule::MAX_EDIT_BYTES));
-		}
 		$file = $this->file($root, $path);
 		NodeAccess::checkEtag($file, $etag);
 		$this->types->assertCurrentName($file);
@@ -105,9 +102,6 @@ final class EditFileHandler {
 	public function execute(Folder $root, string $userId, string $path, string $content, ?string $etag, bool $confirmed, FileBackup $backup): array {
 		$path = PathGuard::normalize($path);
 		$this->assertEditable($root, $path);
-		if (strlen($content) > FilesModule::MAX_EDIT_BYTES) {
-			throw new ToolFailure(EditingMessages::editTooLarge(FilesModule::MAX_EDIT_BYTES));
-		}
 		$file = $this->file($root, $path);
 		$this->locks?->assertWritable($file, $userId, $path);
 		// Before the shared-write confirmation: a denied type must not return a confirmation payload.

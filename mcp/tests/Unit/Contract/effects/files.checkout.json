@@ -17,7 +17,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "**Download file for local editing**\n\nPrepare **/Documentos/ata.md** to be downloaded, changed and sent back.\n\n- Size: 10 B\n- The download link works for 5 minutes and the upload link for 15 minutes.\n- The new version can weigh up to 64 B.\n- Nothing is changed until the new version is uploaded.\n- A copy of the current file is saved first in **/MCP backups**.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files\\_edit or files\\_replace.*\n\n*To confirm, repeat the call with etag `e102`.*"
+                                "text": "**Download file for local editing**\n\nPrepare **/Documentos/ata.md** to be downloaded, changed and sent back.\n\n- Size: 10 B\n- The download link works for 5 minutes and the upload link for 15 minutes.\n- No MCP file-size ceiling; native limits apply.\n- Nothing is changed until the new version is uploaded.\n- A copy of the current file is saved first in **/MCP backups**.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files\\_edit or files\\_replace.*\n\n*To confirm, repeat the call with etag `e102`.*"
                             }
                         ],
                         "structuredContent": {
@@ -31,7 +31,7 @@
                             "mime": "text/markdown",
                             "downloadTtlSeconds": 300,
                             "uploadTtlSeconds": 900,
-                            "uploadMaxBytes": 64,
+                            "uploadMaxBytes": null,
                             "backup": "/MCP backups",
                             "access": {
                                 "scope": "personal",
@@ -50,7 +50,7 @@
                             "recoverable": true,
                             "linksAfterConfirmation": true,
                             "consequence": "The upload replaces the whole file, takes the same backup as an edit and is refused if the file changed since the checkout.",
-                            "message": "Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace."
+                            "message": "Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace."
                         }
                     }
                 }
@@ -119,7 +119,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "**Download file for local editing**\n\nPrepare **/Documentos/ata.md** to be downloaded, changed and sent back.\n\n- Size: 10 B\n- The download link works for 5 minutes and the upload link for 15 minutes.\n- The new version can weigh up to 64 B.\n- Nothing is changed until the new version is uploaded.\n- A copy of the current file is saved first in **/MCP backups**.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files\\_edit or files\\_replace.*\n\n*To confirm, repeat the call with etag `e102`.*"
+                                "text": "**Download file for local editing**\n\nPrepare **/Documentos/ata.md** to be downloaded, changed and sent back.\n\n- Size: 10 B\n- The download link works for 5 minutes and the upload link for 15 minutes.\n- No MCP file-size ceiling; native limits apply.\n- Nothing is changed until the new version is uploaded.\n- A copy of the current file is saved first in **/MCP backups**.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files\\_edit or files\\_replace.*\n\n*To confirm, repeat the call with etag `e102`.*"
                             }
                         ],
                         "structuredContent": {
@@ -133,7 +133,7 @@
                             "mime": "text/markdown",
                             "downloadTtlSeconds": 300,
                             "uploadTtlSeconds": 900,
-                            "uploadMaxBytes": 64,
+                            "uploadMaxBytes": null,
                             "backup": "/MCP backups",
                             "access": {
                                 "scope": "personal",
@@ -152,7 +152,7 @@
                             "recoverable": true,
                             "linksAfterConfirmation": true,
                             "consequence": "The upload replaces the whole file, takes the same backup as an edit and is refused if the file changed since the checkout.",
-                            "message": "Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace."
+                            "message": "Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace."
                         }
                     }
                 }
@@ -189,7 +189,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "**Download file for local editing**\n\nPrepare **/Documentos/ata.md** to be downloaded, changed and sent back.\n\n- Size: 10 B\n- The download link works for 5 minutes and the upload link for 15 minutes.\n- The new version can weigh up to 64 B.\n- Nothing is changed until the new version is uploaded.\n- A copy of the current file is saved first in **/MCP backups**.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files\\_edit or files\\_replace.*\n\n*To confirm, repeat the call with etag `e102`.*"
+                                "text": "**Download file for local editing**\n\nPrepare **/Documentos/ata.md** to be downloaded, changed and sent back.\n\n- Size: 10 B\n- The download link works for 5 minutes and the upload link for 15 minutes.\n- No MCP file-size ceiling; native limits apply.\n- Nothing is changed until the new version is uploaded.\n- A copy of the current file is saved first in **/MCP backups**.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files\\_edit or files\\_replace.*\n\n*To confirm, repeat the call with etag `e102`.*"
                             }
                         ],
                         "structuredContent": {
@@ -203,7 +203,7 @@
                             "mime": "text/markdown",
                             "downloadTtlSeconds": 300,
                             "uploadTtlSeconds": 900,
-                            "uploadMaxBytes": 64,
+                            "uploadMaxBytes": null,
                             "backup": "/MCP backups",
                             "access": {
                                 "scope": "personal",
@@ -222,7 +222,7 @@
                             "recoverable": true,
                             "linksAfterConfirmation": true,
                             "consequence": "The upload replaces the whole file, takes the same backup as an edit and is refused if the file changed since the checkout.",
-                            "message": "Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace."
+                            "message": "Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace."
                         }
                     }
                 }
@@ -379,7 +379,7 @@
                         "content": [
                             {
                                 "type": "text",
-                                "text": "**Download file for local editing**\n\nPrepare **/Documentos/ata.md** to be downloaded, changed and sent back.\n\n- Size: 10 B\n- The download link works for 5 minutes and the upload link for 15 minutes.\n- The new version can weigh up to 64 B.\n- Nothing is changed until the new version is uploaded.\n- A copy of the current file is saved first in **/MCP backups**.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files\\_edit or files\\_replace.*\n\n*To confirm, repeat the call with etag `e102`.*"
+                                "text": "**Download file for local editing**\n\nPrepare **/Documentos/ata.md** to be downloaded, changed and sent back.\n\n- Size: 10 B\n- The download link works for 5 minutes and the upload link for 15 minutes.\n- No MCP file-size ceiling; native limits apply.\n- Nothing is changed until the new version is uploaded.\n- A copy of the current file is saved first in **/MCP backups**.\n\nNothing was changed. Confirm to execute.\n\n*After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files\\_edit or files\\_replace.*\n\n*To confirm, repeat the call with etag `e102`.*"
                             }
                         ],
                         "structuredContent": {
@@ -393,7 +393,7 @@
                             "mime": "text/markdown",
                             "downloadTtlSeconds": 300,
                             "uploadTtlSeconds": 900,
-                            "uploadMaxBytes": 64,
+                            "uploadMaxBytes": null,
                             "backup": "/MCP backups",
                             "access": {
                                 "scope": "personal",
@@ -412,7 +412,7 @@
                             "recoverable": true,
                             "linksAfterConfirmation": true,
                             "consequence": "The upload replaces the whole file, takes the same backup as an edit and is refused if the file changed since the checkout.",
-                            "message": "Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) up to the upload limit below; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace."
+                            "message": "Nothing was changed. After your approval a single-use download link and a single-use upload link are issued for this file, which can be any file type (document, spreadsheet, PDF, image) subject to native storage and transport limits; the upload only succeeds while the ETag below is the current one. A text file can also be edited directly with files_edit or files_replace."
                         }
                     }
                 }

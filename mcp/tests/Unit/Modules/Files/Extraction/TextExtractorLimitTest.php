@@ -17,7 +17,7 @@ use OCP\Files\File;
 use OCP\ITempManager;
 use PHPUnit\Framework\TestCase;
 
-/** The file ceiling follows the administrator; a zip entry stays at 20 MiB. */
+/** Native-only reads, including document extraction above historical application ceilings. */
 final class TextExtractorLimitTest extends TestCase {
 	/**
 	 * @param int|null $mib Configured ceiling in MiB, null keeps the default.
@@ -49,56 +49,52 @@ final class TextExtractorLimitTest extends TestCase {
 		return $file;
 	}
 
-	public function testWithoutALimitTheCeilingStaysTwentyMib(): void {
+	public function testReadHasNoApplicationDefaultByteCeiling(): void {
 		$extractor = $this->extractor(null);
-		$this->assertSame(TextExtractor::MAX_BYTES, $extractor->maxFileBytes());
-		$this->assertSame(20 * 1024 * 1024, TextExtractor::MAX_BYTES);
-		$this->expectException(ToolFailure::class);
-		$this->expectExceptionMessage(TextExtractor::tooLarge(TextExtractor::MAX_BYTES));
-		$extractor->readText($this->file(TextExtractor::MAX_BYTES + 1));
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $extractor->maxFileBytes());
+		$this->assertSame("hello\n", $extractor->readText($this->file(TextExtractor::MAX_BYTES + 1)));
 	}
 
 	public function testARaisedLimitReadsAFileTheOldConstantRefused(): void {
 		$extractor = $this->extractor(40);
-		$this->assertSame(40 * 1024 * 1024, $extractor->maxFileBytes());
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $extractor->maxFileBytes());
 		$this->assertSame("hello\n", $extractor->readText($this->file(TextExtractor::MAX_BYTES + 1)));
 	}
 
-	public function testAFileAboveTheConfiguredLimitIsRefused(): void {
-		$extractor = $this->extractor(40);
-		$this->expectException(ToolFailure::class);
-		$this->expectExceptionMessage(TextExtractor::tooLarge(40 * 1024 * 1024));
-		$extractor->readText($this->file(40 * 1024 * 1024 + 1));
+	public function testLegacyConfiguredLimitIsIgnored(): void {
+		$extractor = $this->extractor(1);
+		$this->assertSame("hello\n", $extractor->readText($this->file(40 * 1024 * 1024 + 1)));
 	}
 
-	public function testAZipEntryStaysCappedWhenTheFileLimitIsHigher(): void {
+	public function testValidDocxEntryExceedsFormerZipEntryCeiling(): void {
 		$extractor = $this->extractor(40);
-		$docx = self::zip('word/document.xml', '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:t>HELLO_MCP</w:t></w:p></w:document>');
-		$this->assertStringContainsString('HELLO_MCP', $extractor->extractBytes($docx, 'note.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
-		$bomb = self::zip('word/document.xml', str_repeat('A', FileReadLimit::ZIP_ENTRY_MAX_BYTES + 1));
-		$this->assertSame(ReadingMessages::notExtracted('bomb.docx'), $extractor->extractBytes($bomb, 'bomb.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
-		$this->assertSame(20 * 1024 * 1024, FileReadLimit::ZIP_ENTRY_MAX_BYTES);
+		$text = str_repeat('A', FileReadLimit::ZIP_ENTRY_MAX_BYTES + 1);
+		$docx = self::zip('word/document.xml', '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:t>' . $text . '</w:t></w:p></w:document>');
+		$this->assertSame($text, $extractor->extractBytes($docx, 'large.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
 	}
 
 	/** 128M used to shrink the default to 16 MiB. The default, and a file between 16 and 20 MiB, stay readable. */
-	public function testASmallHostStillReadsTheTwentyMibDefault(): void {
+	public function testMemoryDirectiveIsNotConvertedToAnArbitraryFileLimit(): void {
 		$extractor = $this->extractor(null, '128M');
-		$this->assertSame(20 * 1024 * 1024, $extractor->maxFileBytes());
-		$this->assertSame(80 * 1024 * 1024, $extractor->maxFileBytes() * 4);
-		$this->assertSame("hello\n", $extractor->readText($this->file(17 * 1024 * 1024)));
+		$this->assertSame(FileReadLimit::NATIVE_ONLY, $extractor->maxFileBytes());
+		$this->assertSame("hello\n", $extractor->readText($this->file(25 * 1024 * 1024)));
 	}
 
 	/** readText of a PDF asks for the stored ceiling once and passes that same value into the decode allowance. */
-	public function testOnePdfReadResolvesTheCeilingOnce(): void {
+	public function testPdfExtractionDoesNotReadLegacyFileLimitSetting(): void {
 		$config = $this->createMock(\OCP\IConfig::class);
-		$config->expects($this->once())->method('getAppValue')
-			->with('mcp', FileReadLimit::MAX_BYTES_KEY, (string)FileReadLimit::DEFAULT_MAX_BYTES)
-			->willReturn((string)FileReadLimit::DEFAULT_MAX_BYTES);
+		$config->expects($this->never())->method('getAppValue');
 		$temp = $this->createMock(ITempManager::class);
 		$extractor = new TextExtractor($temp, new FileReadLimit($config));
 		$pdf = \OCA\Mcp\Tests\Unit\Tools\BrokenTextSamples::pdf();
-		$text = $extractor->readText($this->file(strlen($pdf), 'a.pdf', $pdf, 'application/pdf'));
-		$this->assertNotSame('', $text);
+		$this->assertNotSame('', $extractor->readText($this->file(strlen($pdf), 'a.pdf', $pdf, 'application/pdf')));
+	}
+
+	/** A large native memory allowance is not a request to allocate that much RAM. */
+	public function testSmallDocumentDoesNotAllocateTheNativeMemoryAllowance(): void {
+		$extractor = $this->extractor(null, '8G');
+		$docx = self::zip('word/document.xml', '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:p><w:t>small text</w:t></w:p></w:document>');
+		$this->assertSame('small text', $extractor->extractBytes($docx, 'small.docx', ''));
 	}
 
 	private static function zip(string $entry, string $content): string {

@@ -72,13 +72,11 @@ final class ImagePreview {
 
 	/** @return int per-image byte limit, from app config with a sane default and a lower floor */
 	public function singleMaxBytes(): int {
-		$configured = (int)$this->config->getAppValue('mcp', ImageLimits::SINGLE_MAX_BYTES_KEY, (string)ImageLimits::DEFAULT_SINGLE_MAX_BYTES);
-		return $configured > 0 ? $configured : ImageLimits::DEFAULT_SINGLE_MAX_BYTES;
+		return PHP_INT_MAX;
 	}
 
 	/** @return int batch budget, from app config with a sane default */
 	public function batchMaxBytes(): int {
-		$configured = (int)$this->config->getAppValue('mcp', ImageLimits::BATCH_MAX_BYTES_KEY, (string)ImageLimits::DEFAULT_BATCH_MAX_BYTES);
-		return $configured > 0 ? $configured : ImageLimits::DEFAULT_BATCH_MAX_BYTES;
+		return PHP_INT_MAX;
 	}
 }

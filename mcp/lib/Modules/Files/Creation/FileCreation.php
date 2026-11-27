@@ -79,7 +79,7 @@ final class FileCreation {
 			'name' => $target['name'],
 			'folder' => $target['folderPath'],
 		] + ($size === null ? [] : ['size' => $size]) + [
-			'uploadMaxBytes' => $limit,
+			'uploadMaxBytes' => null,
 			'uploadTtlSeconds' => \OCA\Mcp\Modules\Files\Checkout\CheckoutService::UPLOAD_TTL,
 			'access' => $this->access->describe($target['folder'], $userId),
 			'shared' => $shared === null ? [] : [$shared],
@@ -116,7 +116,7 @@ final class FileCreation {
 			'uploadUrl' => $link['upload_url'],
 			'method' => 'PUT',
 			'expiresAt' => $link['expires_at'],
-			'maxBytes' => $limit,
+			'maxBytes' => null,
 			'curl' => sprintf('curl -sS -T %s -X PUT -H "Content-Type: application/octet-stream" "%s"', self::LOCAL_FILE, $link['upload_url']),
 			'message' => \OCA\Mcp\Modules\Files\Presentation\CreationMessages::uploadIssued(),
 		];
@@ -291,13 +291,8 @@ final class FileCreation {
 	 * @throws ToolFailure for a content over the limit, and as {@see self::target()}
 	 */
 	private function textTarget(Folder $root, string $path, string $content): array {
-		$extension = strtolower(pathinfo(PathGuard::normalize($path), PATHINFO_EXTENSION));
-		if (!in_array($extension, self::TEXT_EXTENSIONS, true)) {
-			throw new ArgumentValidationException('Invalid argument: path', 'path', \OCA\Mcp\Modules\Files\Presentation\CreationMessages::createExtensionRule());
-		}
-		if (strlen($content) > self::MAX_INLINE_BYTES) {
-			throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\CreationMessages::createTooLarge(self::MAX_INLINE_BYTES));
-		}
+		// The JSON content is text, but its destination may have any native-valid name.
+		// Filename validation, scope, collision and native quota checks remain in target()/write().
 		return $this->target($root, $path);
 	}
 

@@ -58,9 +58,6 @@ final class TreeMeasure {
 				continue;
 			}
 			$bytes += (int)$current->getSize();
-			if ($bytes > ReorganizationLimits::BYTES) {
-				throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\ReorganizationMessages::copyTooLarge(ReorganizationLimits::BYTES));
-			}
 		}
 		return ['nodes' => $nodes, 'bytes' => $bytes];
 	}

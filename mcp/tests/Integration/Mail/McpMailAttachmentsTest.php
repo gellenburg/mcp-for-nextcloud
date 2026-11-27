@@ -10,7 +10,7 @@ namespace OCA\Mcp\Tests\Integration\Mail;
 use OCA\Mcp\Access\Grants\GrantPolicy;
 use OCA\Mcp\Tests\Integration\IntegrationTestCase;
 use OCA\Mcp\Modules\Mail\Presentation\MailAttachmentMessages;
-use OCA\Mcp\Modules\Mail\Reading\MailBodyPreflight;
+use OCA\Mcp\Modules\Mail\Reading\ReadAttachmentHandler;
 use OCA\Mcp\Modules\Mail\Presentation\MailMessages;
 use OCP\Server;
 use PHPUnit\Framework\Attributes\Group;
@@ -21,8 +21,8 @@ use PHPUnit\Framework\Attributes\Group;
  *
  * Without `mail.attachments` the tool is absent and uncallable, even with `mail.messages`; with it alone the tool reads.
  * CSV in ISO-8859-1, HTML, PDF and a DOCX declared as octet-stream come back as text; an image, a PDF outside the
- * decoding budget, an embedded message, an S/MIME message, a message over 1 MiB, the body part, another user's message
- * and a cached UID of an older generation are refused. Through all of it the IMAP server keeps every flag, counter and
+ * decoding budget, an embedded message, an S/MIME message, the body part, another user's message
+ * and a cached UID of an older generation are refused. A message over the former 1 MiB ceiling is readable. Through all of it the IMAP server keeps every flag, counter and
  * modification sequence (CONDSTORE) and the Mail tables of the account do not change; the rawlogs of the window are
  * kept for the PEEK evidence.
  */
@@ -144,9 +144,13 @@ final class McpMailAttachmentsTest extends IntegrationTestCase {
 		foreach ($refusals as $index => $message) {
 			$this->assertSame(['content' => [['type' => 'text', 'text' => $message]], 'isError' => true], $results[$index], "call $index");
 		}
-		$this->assertTrue($results[8]['isError'] ?? false, 'the oversized message');
-		$this->assertStringStartsWith('This message is ', $results[8]['content'][0]['text']);
-		$this->assertStringEndsWith(intdiv(MailBodyPreflight::MAX_MESSAGE_BYTES, 1024) . ' KiB allowed; its attachments were not read. Open it in Mail.', $results[8]['content'][0]['text']);
+		$large = $this->decoded($results[8])['attachment'];
+		$this->assertSame('big.txt', $large['name']);
+		$this->assertSame('text', $large['kind']);
+		$this->assertGreaterThan(1048576, $large['totalChars'], 'attachment exceeds the historical message ceiling');
+		$this->assertTrue($large['truncated'], 'the separate output window remains bounded');
+		$this->assertSame(ReadAttachmentHandler::DEFAULT_MAX_CHARS, mb_strlen($large['text']));
+		$this->assertStringStartsWith(str_repeat('z', 75) . "\n", $large['text']);
 		self::markCell(sprintf('ml3-refused started=%.3f ended=%.3f', $calls[4]['started'], $calls[13]['ended']));
 
 		$this->assertSame($serverBefore, $imap->state(), 'the IMAP server changed: a flag, a counter or a modification sequence moved');

@@ -62,15 +62,17 @@ final class CheckoutLimitControllerTest extends TestCase {
 		$this->assertSame(50 * 1024 * 1024, $data['configuredBytes']);
 		$this->assertSame(CheckoutService::DEFAULT_MAX_BYTES, $data['defaultBytes']);
 		$this->assertSame($this->checkout->phpMaxBytes(), $data['phpBytes']);
-		$this->assertSame($this->expectedEffective(50 * 1024 * 1024), $data['effectiveBytes']);
+		$this->assertNull($data['effectiveBytes']);
+		$this->assertTrue($data['nativeOnly']);
 	}
 
 	public function testUpdateStoresWholeMibAsBytes(): void {
 		$data = $this->controller(['mib' => 200])->update()->getData();
 		$this->assertSame((string)(200 * 1024 * 1024), $this->config->app['mcp'][CheckoutService::MAX_BYTES_KEY]);
 		$this->assertSame(200 * 1024 * 1024, $data['configuredBytes']);
-		$this->assertSame($this->expectedEffective(200 * 1024 * 1024), $data['effectiveBytes']);
-		$this->assertSame($this->expectedEffective(200 * 1024 * 1024), $this->checkout->maxBytes(), 'files_checkout uses the new limit at once');
+		$this->assertNull($data['effectiveBytes']);
+		$this->assertTrue($data['nativeOnly']);
+		$this->assertSame(CheckoutService::NATIVE_ONLY, $this->checkout->maxBytes(), 'files_checkout uses the new limit at once');
 	}
 
 	public function testUpdateRejectsAnythingButAPositiveWholeNumberWithoutWriting(): void {

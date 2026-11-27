@@ -9,13 +9,12 @@ namespace OCA\Mcp\Tests\Integration\Files;
 
 use OCA\Mcp\Access\FileTypes\FileWritePolicy;
 use OCA\Mcp\Tests\Integration\Exclusion\ExclusionTestCase;
-use OCA\Mcp\Access\FileTypes\FileTypeMessages;
 use OCA\Mcp\Modules\Files\Reorganization\Batch;
 use OCA\Mcp\Modules\Files\Reorganization\BatchStore;
 use OCP\IAppConfig;
 use OCP\Server;
 
-/** Real OAuth batch/undo boundaries, including denial before a missing recorded parent can be recreated. */
+/** Real OAuth batch/undo boundaries, native identity and missing-parent recovery under legacy configuration. */
 final class TreeBatchPolicyHttpTest extends ExclusionTestCase {
 	/** Seed API fixtures before enabling the policy used by the real MCP endpoint.
 	 * @return void
@@ -24,7 +23,9 @@ final class TreeBatchPolicyHttpTest extends ExclusionTestCase {
 		parent::setUp();
 		$this->makeFile('home', 'a.txt', 'alpha');
 		$this->makeFile('home', 'b.txt', 'beta');
-		Server::get(FileWritePolicy::class)->save('allowlist', ['txt'], false);
+		$config = Server::get(IAppConfig::class);
+		$config->setValueString('mcp', FileWritePolicy::KEY, '{"version":1,"mode":"allowlist","extensions":["txt"],"allowExtensionless":false}', false);
+		$config->clearCache(false);
 	}
 
 	/** Restore the absent policy key; the base only cleans its own disposable integration fixtures.
@@ -37,56 +38,51 @@ final class TreeBatchPolicyHttpTest extends ExclusionTestCase {
 		parent::tearDown();
 	}
 
-	/** Planning and a direct confirmation both refuse a forbidden intermediate before any mkdir.
-	 * @return void
-	 */
-	public function testBatchDeniedBeforeFoldersAndBytesChange(): void {
+	/** Planning is side-effect free; confirmation creates the destination and moves the original ID. */
+	public function testBatchAcceptsUnlistedExtensionWithoutPrematureChanges(): void {
 		$client = $this->mcp(self::ALICE, 'bearer');
 		$parent = $this->path('home', 'new');
-		$args = ['mkdirs' => [$parent], 'moves' => [
-			['from' => $this->path('home', 'a.txt'), 'to' => $parent . '/stage.php'],
-			['from' => $parent . '/stage.php', 'to' => $parent . '/final.txt'],
-		]];
+		$from = $this->path('home', 'a.txt');
+		$to = $parent . '/stage.php';
+		$id = $this->node(self::ALICE, $from)->getId();
+		$args = ['mkdirs' => [$parent], 'moves' => [['from' => $from, 'to' => $to]]];
 		$plan = $client->tool('files_move_batch', $args);
 		self::assertTrue($plan->ok(), $plan->describe());
-		self::assertFalse($plan->structured()['ok'], $plan->raw);
-		self::assertContains(['from' => $this->path('home', 'a.txt'), 'to' => $parent . '/stage.php',
-			'reason' => FileTypeMessages::denied()], $plan->structured()['denied']);
+		self::assertTrue($plan->structured()['ok'], $plan->raw);
 		self::assertFalse($this->exists(self::ALICE, $parent));
-		self::assertSame('alpha', $this->node(self::ALICE, $this->path('home', 'a.txt'))->getContent());
+		self::assertSame('alpha', $this->node(self::ALICE, $from)->getContent());
 		$reply = $client->write('files_move_batch', $args);
-		self::assertTrue($reply->isError(), $reply->describe());
-		self::assertFalse($this->exists(self::ALICE, $parent));
-		self::assertSame('alpha', $this->node(self::ALICE, $this->path('home', 'a.txt'))->getContent());
+		self::assertTrue($reply->ok(), $reply->describe());
+		self::assertFalse($this->exists(self::ALICE, $from));
+		self::assertSame($id, $this->node(self::ALICE, $to)->getId());
+		self::assertSame('alpha', $this->node(self::ALICE, $to)->getContent());
 	}
 
-	/** D8: a refused inverse preserves the row, ID and bytes, and does not create its missing original parent.
-	 * @return void
-	 */
-	public function testUndoDeniedBeforeRecreatingRecordedParent(): void {
+	/** Undo recreates the recorded missing parent and restores the same file ID and bytes. */
+	public function testUndoRestoresUnlistedOriginalName(): void {
 		$store = Server::get(BatchStore::class);
 		$parent = $this->path('home', 'missing');
-		$node = $this->node(self::ALICE, $this->path('home', 'a.txt'));
+		$from = $this->path('home', 'a.txt');
+		$to = $parent . '/original.php';
+		$node = $this->node(self::ALICE, $from);
+		$nodeId = $node->getId();
 		$id = $store->insert(new Batch(null, self::ALICE, time(), [[
-			'from' => $parent . '/original.php', 'to' => $this->path('home', 'a.txt'), 'toId' => (int)$node->getId(),
+			'from' => $to, 'to' => $from, 'toId' => (int)$nodeId,
 		]], [$parent], null));
 		$before = $store->find($id, self::ALICE)->toRow();
 		$client = $this->mcp(self::ALICE, 'bearer');
 		$plan = $client->tool('files_undo_batch', ['batch_id' => $id]);
 		self::assertTrue($plan->ok(), $plan->describe());
-		self::assertFalse($plan->structured()['ok'], $plan->raw);
-		self::assertContains(FileTypeMessages::denied(), array_column($plan->structured()['conflicts'], 'reason'));
+		self::assertTrue($plan->structured()['ok'], $plan->raw);
 		self::assertSame($before, $store->find($id, self::ALICE)->toRow());
 		self::assertFalse($this->exists(self::ALICE, $parent));
-		self::assertSame('alpha', $this->node(self::ALICE, $this->path('home', 'a.txt'))->getContent());
+		self::assertSame('alpha', $this->node(self::ALICE, $from)->getContent());
 		$reply = $client->write('files_undo_batch', ['batch_id' => $id]);
 		self::assertTrue($reply->ok(), $reply->describe());
-		self::assertSame(0, $reply->json()['undone']);
-		self::assertNotEmpty($reply->json()['conflicts']);
-		self::assertSame($before, $store->find($id, self::ALICE)->toRow());
-		self::assertFalse($this->exists(self::ALICE, $parent));
-		self::assertSame('alpha', $this->node(self::ALICE, $this->path('home', 'a.txt'))->getContent());
-		self::assertSame($node->getId(), $this->node(self::ALICE, $this->path('home', 'a.txt'))->getId());
+		self::assertSame(1, $reply->json()['undone']);
+		self::assertFalse($this->exists(self::ALICE, $from));
+		self::assertSame($nodeId, $this->node(self::ALICE, $to)->getId());
+		self::assertSame('alpha', $this->node(self::ALICE, $to)->getContent());
 	}
 
 	/** An entirely allowed batch and inverse preserve the existing native identity and receipt.

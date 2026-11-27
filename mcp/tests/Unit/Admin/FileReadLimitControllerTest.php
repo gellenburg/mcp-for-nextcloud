@@ -42,7 +42,8 @@ final class FileReadLimitControllerTest extends TestCase {
 		$this->assertSame($this->limit->phpMaxBytes(), $data['phpBytes']);
 		$this->assertSame($this->limit->phpUnlimited(), $data['phpUnlimited']);
 		$this->assertSame($this->limit->phpRejected(), $data['phpRejected']);
-		$this->assertSame($this->limit->maxBytes(), $data['effectiveBytes']);
+		$this->assertNull($data['effectiveBytes']);
+		$this->assertTrue($data['nativeOnly']);
 		$this->assertSame($this->limit->phpUnlimited() ? null : FileReadLimit::ceilingBytes($this->limit->phpMaxBytes()), $data['ceilingBytes']);
 	}
 
@@ -69,7 +70,8 @@ final class FileReadLimitControllerTest extends TestCase {
 		$data = $this->controller(['mib' => 5])->update()->getData();
 		$this->assertSame((string)(5 * 1024 * 1024), $this->config->app['mcp'][FileReadLimit::MAX_BYTES_KEY]);
 		$this->assertSame(5 * 1024 * 1024, $data['configuredBytes']);
-		$this->assertSame($this->limit->maxBytes(), $data['effectiveBytes']);
+		$this->assertNull($data['effectiveBytes']);
+		$this->assertTrue($data['nativeOnly']);
 		$this->assertSame(5 * 1024 * 1024, $this->limit->configuredMaxBytes());
 	}
 

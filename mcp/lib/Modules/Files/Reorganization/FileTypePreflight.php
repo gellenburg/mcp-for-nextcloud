@@ -38,7 +38,8 @@ final class FileTypePreflight {
 	 * @throws ToolFailure Before effects for any hidden node, refused name or ceiling.
 	 */
 	public function inspect(Node $source, string $to, FileTypeCheck $snapshot, bool $copy = false): ?array {
-		if (!$snapshot->isActive()) {
+		// A folder manifest protects identity, visibility and copy integrity independently of extension policy.
+		if (!$source instanceof Folder && !$snapshot->isActive()) {
 			return null;
 		}
 		$key = $source->getPath() . ':' . $source->getId();
@@ -80,9 +81,7 @@ final class FileTypePreflight {
 			if ($node instanceof File) {
 				$this->context->policy()->assertProjected($node, $final, $snapshot);
 				$bytes += max(0, (int)$node->getSize());
-				if ($copy && $bytes > \OCA\Mcp\Modules\Files\Reorganization\ReorganizationLimits::BYTES) {
-					throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\ReorganizationMessages::copyTooLarge(\OCA\Mcp\Modules\Files\Reorganization\ReorganizationLimits::BYTES));
-				}
+				// No MCP byte admission ceiling.
 			}
 			$entries[] = ['source' => $node->getPath(), 'to' => $final, 'id' => (int)$node->getId(), 'folder' => $node instanceof Folder];
 		}
@@ -101,9 +100,6 @@ final class FileTypePreflight {
 	 * @return list<array{from:string,to:string,reason:string}> Type conflicts; no hidden path or count is revealed.
 	 */
 	public function moves(Folder $root, array $moves, FileTypeCheck $snapshot, bool $undo = false): array {
-		if (!$snapshot->isActive()) {
-			return [];
-		}
 		$aliases = [];
 		$conflicts = [];
 		foreach ($undo ? array_reverse($moves) : $moves as $item) {

@@ -82,7 +82,7 @@ final class ImageBatch {
 			'returned' => count($items),
 			'skipped' => $skipped,
 			'bytes_used' => $used,
-			'bytes_budget' => $budget,
+			'bytes_budget' => null,
 		];
 		return ToolResult::images($items, $summary);
 	}

@@ -25,8 +25,8 @@ final class MailSaveBudget {
 
 	/** @return int Current effective decoded byte limit. */
 	public function effective(): int {
-		$max = (int)$this->config->getAppValue('mcp', 'checkout_max_bytes', (string)(50 * 1024 * 1024));
-		return self::calculate($max > 0 ? $max : 50 * 1024 * 1024, (string)ini_get('memory_limit'), memory_get_usage(true));
+		// Native mail/storage/PHP constraints govern the operation; no extra decoded-file quota.
+		return PHP_INT_MAX - 1;
 	}
 
 	/**

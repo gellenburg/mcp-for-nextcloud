@@ -154,9 +154,6 @@ class NotesRepository {
 	 * @throws ToolFailure when the note exceeds MAX_BYTES
 	 */
 	public function raw(File $note): string {
-		if ($note->getSize() > self::MAX_BYTES) {
-			throw new ToolFailure(NotesMessages::noteTooLargeForReading(self::MAX_BYTES));
-		}
 		return (string)$note->getContent();
 	}
 

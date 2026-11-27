@@ -8,13 +8,12 @@ declare(strict_types=1);
 namespace OCA\Mcp\Tests\Integration\Policy;
 
 use OCA\Mcp\Access\FileTypes\FileWritePolicy;
-use OCA\Mcp\Access\FileTypes\FileWritePolicyUnavailable;
 use OCA\Mcp\Tests\Integration\IntegrationTestCase;
 use OCP\IAppConfig;
 use OCP\IDBConnection;
 use OCP\Server;
 
-/** Real core typed-value repair and rollback over the same official database used by IAppConfig. */
+/** Legacy configuration must remain intact in the real core store for rollback. */
 final class FileWritePolicyRecoveryTest extends IntegrationTestCase {
 	private bool $seeded = false;
 
@@ -38,50 +37,28 @@ final class FileWritePolicyRecoveryTest extends IntegrationTestCase {
 		}
 	}
 
-	/** Save repairs the type and another real DB session sees no absent row during the delete/set window. */
-	public function testAdminSaveRecoversWrongCoreTypeAtomically(): void {
-		$core = Server::get(IAppConfig::class);
-		$observer = $this->openIndependentConnection();
-		$proxy = $this->createMock(IAppConfig::class);
-		$proxy->method('clearCache')->willReturnCallback(static fn ($reload) => $core->clearCache($reload));
-		$proxy->method('hasKey')->willReturnCallback(static fn ($app, $key, $lazy) => $core->hasKey($app, $key, $lazy));
-		$proxy->method('getValueString')->willReturnCallback(static fn ($app, $key, $default, $lazy) => $core->getValueString($app, $key, $default, $lazy));
-		$proxy->method('setValueString')->willReturnCallback(static fn ($app, $key, $value, $lazy) => $core->setValueString($app, $key, $value, $lazy));
-		$proxy->method('deleteKey')->willReturnCallback(function ($app, $key) use ($core, $observer): void {
-			self::assertTrue($this->official()->inTransaction());
-			$core->deleteKey($app, $key);
-			$qb = $observer->getQueryBuilder();
-			$value = $qb->select('configvalue')->from('appconfig')
-				->where($qb->expr()->eq('appid', $qb->createNamedParameter('mcp')))
-				->andWhere($qb->expr()->eq('configkey', $qb->createNamedParameter(FileWritePolicy::KEY)))
-				->executeQuery()->fetchOne();
-			self::assertSame('7', (string)$value, 'Another session must not observe absent = off during repair.');
-		});
-		$policy = new FileWritePolicy($proxy, $this->official());
-		$saved = $policy->save('allowlist', ['txt'], false);
-		self::assertSame($saved, $policy->current());
-		self::assertFalse($this->official()->inTransaction());
-	}
-
-	/** A real rollback restores the wrongly typed value, so D9 still refuses rather than treating absence as off. */
-	public function testFailedCommitPreservesD9WithTheRealCoreStore(): void {
-		$db = $this->official();
-		$proxy = $this->createMock(IDBConnection::class);
-		$proxy->method('inTransaction')->willReturnCallback(static fn (): bool => $db->inTransaction());
-		$proxy->method('beginTransaction')->willReturnCallback(static fn () => $db->beginTransaction());
-		$proxy->method('rollBack')->willReturnCallback(static fn () => $db->rollBack());
-		$proxy->method('commit')->willThrowException(new \RuntimeException('controlled failure before commit'));
+	/** Saving through the legacy API does not touch the wrongly typed core value. */
+	public function testLegacySavePreservesWrongCoreType(): void {
 		$config = Server::get(IAppConfig::class);
-		$policy = new FileWritePolicy($config, $proxy);
-		try {
-			$policy->save('allowlist', ['txt'], false);
-			self::fail('Failed commit reported success');
-		} catch (FileWritePolicyUnavailable) {
-			self::assertFalse($db->inTransaction());
-		}
+		$policy = new FileWritePolicy($config, $this->official());
+		self::assertSame(FileWritePolicy::defaults(), $policy->save('allowlist', ['txt'], false));
+		self::assertSame(FileWritePolicy::defaults(), $policy->current());
+		self::assertFalse($this->official()->inTransaction());
 		$config->clearCache(false);
 		self::assertSame(7, $config->getValueInt('mcp', FileWritePolicy::KEY, 0, false));
-		$this->expectException(FileWritePolicyUnavailable::class);
-		$policy->current();
+	}
+
+	/** Native-only admission does not begin, commit or roll back an obsolete policy transaction. */
+	public function testLegacySaveNeverStartsDatabaseTransaction(): void {
+		$proxy = $this->createMock(IDBConnection::class);
+		$proxy->expects(self::never())->method('beginTransaction');
+		$proxy->expects(self::never())->method('commit');
+		$proxy->expects(self::never())->method('rollBack');
+		$config = Server::get(IAppConfig::class);
+		$policy = new FileWritePolicy($config, $proxy);
+		self::assertSame(FileWritePolicy::defaults(), $policy->save('allowlist', ['txt'], false));
+		self::assertSame(FileWritePolicy::defaults(), $policy->current());
+		$config->clearCache(false);
+		self::assertSame(7, $config->getValueInt('mcp', FileWritePolicy::KEY, 0, false));
 	}
 }

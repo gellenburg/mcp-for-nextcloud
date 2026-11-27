@@ -173,9 +173,11 @@ final class NotesModuleTest extends TestCase {
 		$this->invalid('notes_read', ['id' => '1']);
 	}
 
-	public function testReadEnforcesSizeLimit(): void {
-		$id = $this->tree->addFile('/alice/files/Notes/grande.md', 'x', 'text/markdown', ['size' => NotesModule::MAX_BYTES + 1]);
-		$this->assertSame(NotesMessages::noteTooLargeForReading(NotesModule::MAX_BYTES), $this->failure('notes_read', ['id' => $id]));
+	public function testReadLargeNoteBeyondFormerLimit(): void {
+		$body = str_repeat('x', NotesModule::MAX_BYTES + 1);
+		$id = $this->tree->addFile('/alice/files/Notes/grande.md', $body, 'text/markdown');
+		$out = $this->tool('notes_read', ['id' => $id]);
+		$this->assertSame($body, $out['content']);
 	}
 
 	public function testCreateNeverOverwrites(): void {
@@ -312,12 +314,11 @@ final class NotesModuleTest extends TestCase {
 		$this->assertSame('v2', $this->tree->nodes['/alice/files/Notes/Reuniões/Ata.md']['content']);
 	}
 
-	public function testAnOversizedContentWithATitleWritesNothing(): void {
-		$this->assertSame(NotesMessages::noteTooLarge(NotesModule::MAX_BYTES),
-			$this->failure('notes_edit', ['id' => $this->ata, 'content' => str_repeat('x', NotesModule::MAX_BYTES + 1), 'title' => 'Novo']));
-
-		$this->assertSame('decisões...', $this->tree->nodes['/alice/files/Notes/Reuniões/Ata.md']['content']);
-		$this->assertSame([], $this->tree->ops);
+	public function testLargeContentWithATitleIsWrittenAndRenamed(): void {
+		$body = str_repeat('x', NotesModule::MAX_BYTES + 1);
+		$this->tool('notes_edit', ['id' => $this->ata, 'content' => $body, 'title' => 'Novo']);
+		$this->assertSame($body, $this->tree->nodes['/alice/files/Notes/Reuniões/Novo.md']['content']);
+		$this->assertArrayNotHasKey('/alice/files/Notes/Reuniões/Ata.md', $this->tree->nodes);
 	}
 
 	/** P18: notes_create is a write in the notes folder like any other, so a shared folder asks first. */

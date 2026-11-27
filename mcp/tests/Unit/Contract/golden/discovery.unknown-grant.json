@@ -190,7 +190,7 @@
                     {
                         "name": "files_copy",
                         "title": "Copy file",
-                        "description": "Copy a file or folder to another path, creating a new node with a new id. Never overwrites the destination. The copy is an independent node: does not preserve source id, versions, or shares. Capped at 2000 items and 1073741824 bytes, measured before copying. If source or destination is outside your personal folder, ask the user first and retry with confirm_shared.",
+                        "description": "Copy a file or folder to another path, creating a new node with a new id. Never overwrites the destination. The copy is an independent node: does not preserve source id, versions, or shares. Inspects at most 2000 items, with no MCP file-size ceiling. If source or destination is outside your personal folder, ask the user first and retry with confirm_shared.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -371,7 +371,7 @@
                     {
                         "name": "files_read",
                         "title": "Read file",
-                        "description": "Read the text of a file from Nextcloud (plain text/markdown directly; PDF/DOCX/ODT via text extraction). For original file bytes use mode=download (single-use read-only link); for embedded PNG/JPEG descriptions and keywords use mode=metadata.",
+                        "description": "Read text regardless of filename extension when the bytes are text; DOCX/ODT and .pdf files use dedicated extraction. For other binary files use mode=download. For original file bytes use mode=download (single-use read-only link); for embedded PNG/JPEG descriptions and keywords use mode=metadata.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -388,6 +388,16 @@
                                         "metadata"
                                     ],
                                     "description": "Default text; download returns a read-only link to original bytes; metadata extracts embedded PNG/JPEG fields."
+                                },
+                                "offset": {
+                                    "type": "integer",
+                                    "minimum": 0,
+                                    "description": "Optional zero-based character offset for text mode."
+                                },
+                                "max_chars": {
+                                    "type": "integer",
+                                    "minimum": 1,
+                                    "description": "Optional requested number of characters for text mode; omitted returns the entire text."
                                 }
                             },
                             "additionalProperties": false,
@@ -499,7 +509,7 @@
                     {
                         "name": "files_checkout",
                         "title": "Download file for local editing",
-                        "description": "Provide temporary download and upload links to edit any file type (document, spreadsheet, PDF, image) with local tools (curl) without passing content through the model, up to the upload limit. Upload raw bytes with curl -T /tmp/file -X PUT -H \"Content-Type: application/octet-stream\" \"$UPLOAD_URL\". A text file can also be edited directly with files_edit or files_replace. Links are valid for 5 to 15 minutes, single-use, and bound to you, the file, and current ETag: if the file changes before upload, nothing is written. Upload follows the same administrator backup setting as files_edit. If the file is outside your personal folder, only issue links after asking the user and retrying with confirm_shared.",
+                        "description": "Provide temporary download and upload links to edit any file type (document, spreadsheet, PDF, image) with local tools (curl) without passing content through the model; native storage and transport limits apply. Upload raw bytes with curl -T /tmp/file -X PUT -H \"Content-Type: application/octet-stream\" \"$UPLOAD_URL\". A text file can also be edited directly with files_edit or files_replace. Links are valid for 5 to 15 minutes, single-use, and bound to you, the file, and current ETag: if the file changes before upload, nothing is written. Upload follows the same administrator backup setting as files_edit. If the file is outside your personal folder, only issue links after asking the user and retrying with confirm_shared.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -569,7 +579,7 @@
                     {
                         "name": "files_version_read",
                         "title": "Read file version",
-                        "description": "Read the text of a previous file version, with the same limit and text extraction as files_read.",
+                        "description": "Read the text of a previous file version, with the same text extraction as files_read.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -641,7 +651,7 @@
                     {
                         "name": "files_image_view",
                         "title": "View image",
-                        "description": "Fetch a reduced preview of an image file as inline image bytes, so the model can actually see it. Reads only; honors the user folder and permissions. Supports JPG, PNG, HEIC, WebP, GIF, TIFF and the first page of a PDF when the Nextcloud server has a preview provider for the format. The returned image is JPEG/PNG/WebP under a server-wide byte limit: if the preview is still too big the max dimension is reduced until it fits.",
+                        "description": "Fetch a reduced preview of an image file as inline image bytes, so the model can actually see it. Reads only; honors the user folder and permissions. Supports JPG, PNG, HEIC, WebP, GIF, TIFF and the first page of a .pdf file when Nextcloud provides a preview. Returned image bytes have no MCP byte ceiling.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -674,7 +684,7 @@
                     {
                         "name": "files_images_view",
                         "title": "View several images",
-                        "description": "Fetch several image previews in a single call. Pass either paths (up to 6 items) or folder (plus an optional limit) to pick the most recently modified images under that folder. The total image bytes stay under a server-wide budget; images that do not fit are reported as skipped with the reason, so the agent knows what was left out.",
+                        "description": "Fetch several image previews in a single call. Pass either paths (up to 6 items) or folder (plus an optional limit) to pick the most recently modified images under that folder. No MCP byte budget applies. Images that cannot be previewed are reported as skipped with the reason.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -810,7 +820,7 @@
                                 "size": {
                                     "type": "integer",
                                     "minimum": 0,
-                                    "description": "Size of the local file in bytes, optional: a size over the upload limit is refused before any link is issued"
+                                    "description": "Size of the local file in bytes, optional; native storage and transport limits apply"
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
@@ -837,7 +847,7 @@
                     {
                         "name": "files_create",
                         "title": "Create text file",
-                        "description": "Create a NEW small text file with its content inline: .md, .txt, .csv, .json, .html, .xml, .yaml, .yml, up to 1 MB of UTF-8. Never overwrites a file with content: an existing name is refused (use files_edit or files_checkout to change it). For any other type or a larger file use files_upload. The folder must exist (files_mkdir creates it); outside your personal folder ask the user and retry with confirm_shared.",
+                        "description": "Create a NEW file containing UTF-8 text, with any native-valid filename, including unknown extensions and extensionless names. No MCP byte ceiling. Never overwrites an occupied file; use files_edit or files_checkout. For binary bytes use files_upload. The destination folder must exist. Set confirm: false for a dry run.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {
@@ -848,7 +858,7 @@
                                 },
                                 "content": {
                                     "type": "string",
-                                    "description": "Complete text of the new file, up to 1 MB of UTF-8"
+                                    "description": "Complete UTF-8 text of the new file; no MCP file-size limit"
                                 },
                                 "confirm_shared": {
                                     "type": "boolean",
@@ -876,7 +886,7 @@
                     {
                         "name": "files_delete",
                         "title": "Delete file or folder",
-                        "description": "Try the trash bin first: delete one own file or completely admitted folder after preventive checks, with a separate opt-in files.delete permission. Nextcloud tries to move the item to the trash bin and may permanently delete it if that fails. Only unencrypted Local home originals or descendants of local received shares are supported; DELETE, not UPDATE, is required. Shared content requires confirm_shared, including shared descendants in a folder. Received share roots are always refused. Folders are refused with configured exclusion tags or incomplete inspection (2,000 nodes, 1 GiB, 64 levels). Preview returns the exact source, inspected folder counts, ID, ETag and a permanent-deletion risk warning; echo id and etag when confirming. Recovery is not guaranteed, and no mandatory recovery copy is made. After a removal the receipt says whether the item was confirmed in your own trash bin at the time of the check; items inside shares you received go to the trash bin of the owner, which is never checked, so their destination is reported as not confirmed. Personal, mounted and selected scope roots, other backends and reserved backup names (including canonical owner origins behind aliases) are refused. Plans disclose shared impact without recipient names; native restoration destinations can differ by actor/owner.",
+                        "description": "Try the trash bin first: delete one own file or completely admitted folder after preventive checks, with a separate opt-in files.delete permission. Nextcloud tries to move the item to the trash bin and may permanently delete it if that fails. Only unencrypted Local home originals or descendants of local received shares are supported; DELETE, not UPDATE, is required. Shared content requires confirm_shared, including shared descendants in a folder. Received share roots are always refused. Folders are refused with configured exclusion tags or incomplete inspection (2,000 nodes, 64 levels). Preview returns the exact source, inspected folder counts, ID, ETag and a permanent-deletion risk warning; echo id and etag when confirming. Recovery is not guaranteed, and no mandatory recovery copy is made. After a removal the receipt says whether the item was confirmed in your own trash bin at the time of the check; items inside shares you received go to the trash bin of the owner, which is never checked, so their destination is reported as not confirmed. Personal, mounted and selected scope roots, other backends and reserved backup names (including canonical owner origins behind aliases) are refused. Plans disclose shared impact without recipient names; native restoration destinations can differ by actor/owner.",
                         "inputSchema": {
                             "type": "object",
                             "properties": {

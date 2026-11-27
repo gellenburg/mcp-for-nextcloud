@@ -59,7 +59,9 @@ final class TreeBatchFilePolicyTest extends IntegrationTestCase {
 		$access = new NodeAccessInfo($users, $shares);
 		$report = new MoveReport(\OC::$server, $shares, Server::get(\OCP\App\IAppManager::class));
 		$this->context = $this->copyMoveContext($access, $report, $users, Server::get(FileTypeGuard::class));
-		Server::get(FileWritePolicy::class)->save('allowlist', ['txt'], false);
+		$config = Server::get(IAppConfig::class);
+		$config->setValueString('mcp', FileWritePolicy::KEY, '{"version":1,"mode":"allowlist","extensions":["txt"],"allowExtensionless":false}', false);
+		$config->clearCache(false);
 	}
 
 	/**
@@ -162,18 +164,18 @@ final class TreeBatchFilePolicyTest extends IntegrationTestCase {
 		self::assertSame('alpha', $this->root->get($this->base . '/moved/a.txt')->getContent());
 	}
 
-	/** A child already forbidden at final preflight denies the whole move and creates no destination.
-	 * @return void
-	 */
-	public function testForbiddenChildBeforeFinalBoundaryRefusesWholeMove(): void {
-		self::assertContains($this->other->put($this->base . '/src.php/sub/blocked.php', 'blocked'), [201, 204]);
-		try {
-			$this->context->policy()->write($this->source(), '/' . $this->base . '/blocked',
-				fn () => self::fail('The native sink must not run'));
-			self::fail('A forbidden descendant must refuse the whole move');
-		} catch (\OCA\Mcp\Access\FileTypes\FileTypeDenied) {
-			self::assertFalse($this->root->nodeExists($this->base . '/blocked'));
-			self::assertSame('blocked', $this->root->get($this->base . '/src.php/sub/blocked.php')->getContent());
-		}
+	/** An unlisted child present at final preflight travels with the native folder move. */
+	public function testUnlistedChildBeforeFinalBoundaryPreservesWholeMove(): void {
+		self::assertContains($this->other->put($this->base . '/src.php/sub/unlisted.php', 'unlisted'), [201, 204]);
+		$source = $this->source();
+		$id = $source->getId();
+		$to = '/' . $this->base . '/moved';
+		$moved = $this->context->policy()->write($source, $to,
+			fn () => $source->move($this->context->absolute($this->root, $to)));
+		self::assertSame($id, $moved->getId());
+		self::assertFalse($this->root->nodeExists($this->base . '/src.php'));
+		self::assertSame('unlisted', $this->root->get($this->base . '/moved/sub/unlisted.php')->getContent());
+		self::assertSame('alpha', $this->root->get($this->base . '/moved/a.txt')->getContent());
+		self::assertSame('beta', $this->root->get($this->base . '/moved/sub/b.txt')->getContent());
 	}
 }

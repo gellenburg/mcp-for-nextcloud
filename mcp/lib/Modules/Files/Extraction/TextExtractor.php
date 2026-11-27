@@ -16,7 +16,7 @@ use OCP\Files\File;
 use OCP\ITempManager;
 use Smalot\PdfParser\Config;
 
-/** Reads a file within a byte limit and turns text, PDF, DOCX and ODT into plain text. */
+/** Reads files and extracts text without imposing an independent source-file byte quota. */
 class TextExtractor {
 	/** Default file-read ceiling when the administrator set none, in bytes. Not the zip-entry cap. */
 	public const MAX_BYTES = FileReadLimit::DEFAULT_MAX_BYTES;
@@ -49,7 +49,31 @@ class TextExtractor {
 	 * @return bool whether the file is plain text (and therefore readable as-is and editable)
 	 */
 	public static function isText(File $file): bool {
-		return self::isTextNamed($file->getName(), (string)$file->getMimetype());
+		$name = $file->getName();
+		$mime = (string)$file->getMimetype();
+		if (strtolower(pathinfo($name, PATHINFO_EXTENSION)) === 'pdf') {
+			return false;
+		}
+		if (self::isTextNamed($name, $mime)) {
+			return true;
+		}
+		// Recognised document containers need their dedicated parser; do not edit them as text.
+		if (self::canExtract($name, $mime)) {
+			return false;
+		}
+		// A MIME/extension registry miss is not a file-type denial.
+		// Raster images and other known image containers use the binary path.
+		if (str_starts_with(strtolower($mime), 'image/')) {
+			return false;
+		}
+		$bytes = (string)$file->getContent();
+		return !str_starts_with($bytes, '%PDF-') && self::isPlainTextBytes($bytes);
+	}
+
+	/** Recognises arbitrary-extension ASCII/UTF-8 text without treating opaque binary bytes as editable text. */
+	public static function isPlainTextBytes(string $bytes): bool {
+		return !str_starts_with($bytes, '%PDF-') && mb_check_encoding($bytes, 'UTF-8')
+			&& preg_match('/[\x00-\x08\x0E-\x1F\x7F]/', $bytes) === 0;
 	}
 
 	/**
@@ -71,7 +95,7 @@ class TextExtractor {
 	public static function canExtract(string $name, string $mime): bool {
 		$mime = strtolower($mime);
 		$extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-		return $mime === 'application/pdf' || $extension === 'pdf'
+		return $extension === 'pdf'
 			|| $mime === self::DOCX || $extension === 'docx'
 			|| $mime === self::ODT || $extension === 'odt'
 			|| self::isTextNamed($name, $mime);
@@ -85,7 +109,7 @@ class TextExtractor {
 	public static function textMime(string $name, string $mime): string {
 		$lowerMime = strtolower($mime);
 		$extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-		if ($lowerMime === 'application/pdf' || $extension === 'pdf'
+		if ($extension === 'pdf'
 			|| $lowerMime === self::DOCX || $extension === 'docx'
 			|| $lowerMime === self::ODT || $extension === 'odt') {
 			return 'text/plain';
@@ -93,16 +117,8 @@ class TextExtractor {
 		return $mime !== '' ? $mime : 'text/plain';
 	}
 
-	/**
-	 * Extracts text from a file, enforcing the byte limit and truncating to MAX_CHARS.
-	 * Shared by files_read and resources/read.
-	 *
-	 * @param File $file readable file within MAX_BYTES
-	 * @param int $maxChars character limit before truncation
-	 * @return string extracted and truncated text
-	 * @throws ToolFailure over the byte limit, unreadable or unsupported format
-	 */
-	public function readText(File $file, int $maxChars = self::MAX_CHARS): string {
+	/** Full extracted text by default; callers may explicitly request a character limit. */
+	public function readText(File $file, int $maxChars = PHP_INT_MAX): string {
 		$limit = $this->maxFileBytes();
 		if ($file->getSize() > $limit) {
 			throw new ToolFailure(self::tooLarge($limit));
@@ -129,20 +145,12 @@ class TextExtractor {
 		return $this->extractBytes($this->readLimited($file, $limit), $file->getName(), (string)$file->getMimetype(), $limit);
 	}
 
-	/**
-	 * Same extraction for content that is not a node, so a stored version reads exactly like a file.
-	 *
-	 * @param string $bytes raw content within MAX_BYTES
-	 * @param string $name file name the content came from, whose extension counts as text
-	 * @param string $mime MIME type the content came from
-	 * @return string extracted text; a localized extraction-failure notice (see \OCA\Mcp\Modules\Files\Presentation\ReadingMessages::notExtracted) for a corrupt PDF/DOCX/ODT
-	 * @throws ToolFailure for an unsupported format
-	 */
+	/** Extract content from either a native file or its stored version. */
 	public function extractBytes(string $bytes, string $name, string $mime, ?int $limit = null): string {
 		$limit ??= $this->maxFileBytes();
 		$mime = strtolower($mime);
 		$extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
-		if ($mime === 'application/pdf' || $extension === 'pdf') {
+		if ($extension === 'pdf') {
 			return $this->guarded($name, fn () => $this->pdf($bytes, $limit));
 		}
 		if ($mime === self::DOCX || $extension === 'docx') {
@@ -151,7 +159,7 @@ class TextExtractor {
 		if ($mime === self::ODT || $extension === 'odt') {
 			return $this->guarded($name, fn () => $this->zipXml($bytes, 'content.xml', ['#</text:(p|h)>#' => "\n", '#<text:tab\s*/>#' => "\t", '#<text:line-break\s*/>#' => "\n", '#<text:s\s*/>#' => ' ']));
 		}
-		if (self::isTextNamed($name, $mime)) {
+		if (!str_starts_with($bytes, '%PDF-') && (self::isTextNamed($name, $mime) || self::isPlainTextBytes($bytes))) {
 			$text = mb_scrub($bytes, 'UTF-8');
 			return str_starts_with($text, "\u{FEFF}") ? substr($text, 3) : $text;
 		}
@@ -181,7 +189,9 @@ class TextExtractor {
 			throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\ReadingMessages::openFailed());
 		}
 		try {
-			$bytes = stream_get_contents($handle, $limit + 1);
+			$bytes = $limit === FileReadLimit::NATIVE_ONLY
+				? stream_get_contents($handle)
+				: stream_get_contents($handle, $limit + 1);
 		} finally {
 			fclose($handle);
 		}
@@ -215,20 +225,16 @@ class TextExtractor {
 		}
 	}
 
-	/**
-	 * Extracts the text of a PDF with smalot/pdfparser. Embedded images are not retained and the decode
-	 * memory is capped per stream, so a hostile or huge file cannot exhaust PHP memory. {@see PdfTextParser} reads the names of objects
-	 * stored in object streams, where ocrmypdf keeps the page that draws the Tesseract text layer.
-	 *
-	 * @param string $bytes raw PDF content, already within $limit
-	 * @param int $limit file ceiling of this read; the decode allowance is four times that, once, per stream
-	 * @return string plain text of all pages
-	 * @throws \Exception when the PDF cannot be parsed
-	 */
+	/** PDF parsing follows the native PHP memory ceiling rather than an MCP source-file quota. */
 	private function pdf(string $bytes, int $limit): string {
 		$config = new Config();
 		$config->setRetainImageContent(false);
-		$config->setDecodeMemoryLimit($limit * 4);
+		// Decompression is a parser operation, not a source-file size policy.
+		// Respect PHP's actual memory ceiling; avoid overflowing the unlimited integer sentinel.
+		$phpMemory = $this->readLimit->phpMaxBytes();
+		$config->setDecodeMemoryLimit($limit === FileReadLimit::NATIVE_ONLY
+			? ($phpMemory > 0 ? $phpMemory : PHP_INT_MAX)
+			: min(PHP_INT_MAX, $limit > intdiv(PHP_INT_MAX, 4) ? PHP_INT_MAX : $limit * 4));
 		$document = (new PdfTextParser([], $config))->parseContent($bytes);
 		PdfSupplementaryCharacters::restore($document);
 		return $document->getText();
@@ -252,13 +258,32 @@ class TextExtractor {
 			}
 			try {
 				$stat = $zip->statName($entry);
-				// The declared size guards against zip bombs; the read length caps a lying header.
-				// This cap stays fixed when the administrator raises the file-read ceiling.
-				$zipLimit = FileReadLimit::ZIP_ENTRY_MAX_BYTES;
-				if ($stat === false || $stat['size'] > $zipLimit) {
-					throw new \RuntimeException('entry missing or too large');
+				// Declared size is checked against native memory, not an MCP file quota.
+				$phpMemory = $this->readLimit->phpMaxBytes();
+				$available = $phpMemory > 0 ? max(0, $phpMemory - memory_get_usage(true)) : null;
+				if ($stat === false || ($available !== null && $stat['size'] > $available)) {
+					throw new \RuntimeException('entry missing or exceeds native memory');
 				}
-				$xml = $zip->getFromName($entry, $zipLimit);
+				$stream = $zip->getStream($entry);
+				if ($stream === false) {
+					throw new \RuntimeException('entry unreadable');
+				}
+				try {
+					// Fixed-size reads avoid preallocating the entire remaining PHP memory allowance.
+					$xml = '';
+					while (!feof($stream)) {
+						$chunk = fread($stream, 65536);
+						if ($chunk === false || ($chunk === '' && !feof($stream))) {
+							throw new \RuntimeException('entry unreadable');
+						}
+						$xml .= $chunk;
+					}
+				} finally {
+					fclose($stream);
+				}
+				if ($available !== null && strlen($xml) > $available) {
+					throw new \RuntimeException('entry exceeds native memory');
+				}
 			} finally {
 				$zip->close();
 			}

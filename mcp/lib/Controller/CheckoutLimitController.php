@@ -57,7 +57,8 @@ class CheckoutLimitController extends Controller {
 	private function state(): array {
 		return [
 			'configuredBytes' => $this->checkout->configuredMaxBytes(),
-			'effectiveBytes' => $this->checkout->maxBytes(),
+			'effectiveBytes' => null,
+			'nativeOnly' => true,
 			'phpBytes' => $this->checkout->phpMaxBytes(),
 			'defaultBytes' => CheckoutService::DEFAULT_MAX_BYTES,
 		];

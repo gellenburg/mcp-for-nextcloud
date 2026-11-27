@@ -34,15 +34,15 @@ final class ImageFileAccess {
 		if (!$node instanceof File) {
 			throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\ImageMessages::notAnImage());
 		}
-		if (!self::looksLikeImage((string)$node->getMimetype())) {
+		if (!self::looksLikeImage((string)$node->getMimetype(), $node->getName())) {
 			throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\ImageMessages::notAnImage());
 		}
 		return $node;
 	}
 
 	/** @return bool whether the mimetype belongs to the image/* family or is a PDF (previews only). */
-	public static function looksLikeImage(string $mime): bool {
+	public static function looksLikeImage(string $mime, string $name = ''): bool {
 		$mime = strtolower($mime);
-		return str_starts_with($mime, 'image/') || $mime === 'application/pdf';
+		return str_starts_with($mime, 'image/') || ($mime === 'application/pdf' && strtolower(pathinfo($name, PATHINFO_EXTENSION)) === 'pdf');
 	}
 }

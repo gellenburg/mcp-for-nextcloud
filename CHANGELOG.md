@@ -7,6 +7,14 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 All notable changes to the native Nextcloud app (`mcp/`). Versions follow `mcp/appinfo/info.xml`.
 
+## 1.4.2 — fork development build
+
+- Ordinary file transfers and writes use native Nextcloud admission rather than an MCP-specific byte ceiling or extension allowlist. Legacy stored extension policies are preserved but ignored.
+- Read unknown text extensions by content, support full extracted text by default and optional read windows, and retain original-byte binary transfers.
+- Restrict PDF-specific extraction and previews to PDF filename extensions; preserve native permissions, backups, ETags and specialized parser safeguards.
+- Remove independent attachment admission ceilings from the affected Mail and Notes operations. Existing listing ceilings and pagination are deferred.
+- Development build for live acceptance testing; PHPUnit verification remains separate.
+
 ## 1.4.1 — fork development build
 
 - Direct catalog write execution with internal previews, signed state receipts and existing grants, ACLs, scopes, locks and backups.

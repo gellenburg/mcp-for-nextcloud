@@ -7,7 +7,9 @@
     <summary lang="es">Servidor MCP para su Nextcloud: conecte Claude, ChatGPT y otros clientes de IA, con permisos por usuario y por grupo</summary>
     <summary lang="de">MCP-Server für Nextcloud: KI-Clients mit Berechtigungen pro Benutzer und Gruppe verbinden</summary>
     <description><![CDATA[
-## Fork 1.4.1 (development)
+## Fork 1.4.2 (development)
+
+- Native Nextcloud file admission: no independent MCP file-byte ceiling or extension allowlist for ordinary file transfers and writes. Full text extraction by default with optional read windows. Native permissions and structural parser safeguards remain in force.
 
 - Catalog writes execute directly under existing grants and native resource permissions. Explicit dry runs remain available; the server validates signed `plan_state` receipts internally.
 - Read-only original file downloads and embedded PNG/JPEG metadata extraction.
@@ -106,7 +108,7 @@ Claude (claude.ai and Claude Desktop), ChatGPT and Gemini CLI sign in with OAuth
 Nextcloud 32–35 and PHP 8.2 or later; 1.4.0 is supported and tested on Nextcloud 34 and 35, and nothing new targets 32 or 33. Mail 5.0.0+ (attachment text 5.10.11+), Tables 1.0.0+, Forms 5.3.0+ and Polls 8.6.3+ are optional. Deck and Talk are optional: their tools appear only when the app is enabled in a supported version.
     ]]></description>
     <description lang="pt-br"><![CDATA[
-## Fork 1.4.1 (desenvolvimento)
+## Fork 1.4.2 (desenvolvimento)
 
 Execução direta sob as permissões existentes; downloads somente leitura e metadados de imagens PNG/JPEG. Versão derivada da versão 1.4.0 original.
 
@@ -203,7 +205,7 @@ O Claude (claude.ai e Claude Desktop), o ChatGPT e o Gemini CLI entram com OAuth
 Nextcloud 32–35 e PHP 8.2 ou superior; a 1.4.0 é suportada e testada no Nextcloud 34 e 35, e nada novo visa o 32 ou o 33. Mail 5.0.0+ (texto de anexos 5.10.11+), Tables 1.0.0+, Forms 5.3.0+ e Polls 8.6.3+ são opcionais. O Deck e o Talk são opcionais: as ferramentas deles só aparecem com o app ativo numa versão suportada.
     ]]></description>
     <description lang="es"><![CDATA[
-## Fork 1.4.1 (desarrollo)
+## Fork 1.4.2 (desarrollo)
 
 Ejecución directa con los permisos existentes; descargas de solo lectura y metadatos PNG/JPEG. Derivada de la versión original 1.4.0.
 
@@ -300,7 +302,7 @@ Claude (claude.ai y Claude Desktop), ChatGPT y Gemini CLI inician sesión con OA
 Nextcloud 32–35 y PHP 8.2 o superior; la 1.4.0 es compatible y probada en Nextcloud 34 y 35, y nada nuevo apunta a 32 o 33. Mail 5.0.0+ (texto de adjuntos 5.10.11+), Tables 1.0.0+, Forms 5.3.0+ y Polls 8.6.3+ son opcionales. Deck y Talk son opcionales: sus herramientas solo aparecen con la aplicación activa en una versión compatible.
     ]]></description>
     <description lang="de"><![CDATA[
-## Fork 1.4.1 (Entwicklung)
+## Fork 1.4.2 (Entwicklung)
 
 Direkte Ausführung mit bestehenden Berechtigungen, schreibgeschützte Downloads und eingebettete PNG/JPEG-Metadaten. Basiert auf der ursprünglichen Version 1.4.0.
 
@@ -396,7 +398,7 @@ Claude (claude.ai und Claude Desktop), ChatGPT und Gemini CLI melden sich mit OA
 
 Nextcloud 32–35, PHP 8.2+; 1.4.0 wird auf Nextcloud 34 und 35 unterstützt und getestet, nichts Neues zielt auf 32 oder 33. Mail 5.0.0+ (Anhangtext 5.10.11+), Tables 1.0.0+, Forms 5.3.0+ und Polls 8.6.3+; Notes, Mail, Tables, Forms, Polls, Deck und Talk sind optional: ihre Werkzeuge erscheinen nur, wenn die App in einer unterstützten Version aktiviert ist. Der Administrator verwaltet Berechtigungen, Ausschluss-Tags und Ressourcenbereiche. Bestehende Dateikopien und Versions-Voraussetzungen bleiben gültig; Kontaktlöschung braucht eine geprüfte Sicherung.
     ]]></description>
-    <version>1.4.1</version>
+    <version>1.4.2</version>
     <licence>AGPL-3.0-or-later</licence>
     <author mail="jhonatan@sintax.tech">Jhonatan Jaworski</author>
     <namespace>Mcp</namespace>

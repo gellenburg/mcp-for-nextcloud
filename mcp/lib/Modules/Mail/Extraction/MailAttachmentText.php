@@ -52,12 +52,17 @@ class MailAttachmentText {
 	 */
 	public function extract(string $bytes, MailAttachmentPart $part): array {
 		if (MailAttachmentPdf::looksLikePdf($bytes)) {
+			if (strtolower(pathinfo($part->name ?? '', PATHINFO_EXTENSION)) !== 'pdf') {
+				throw new ToolFailure(MailAttachmentMessages::unsupportedType());
+			}
 			return ['kind' => 'pdf', 'text' => MailAttachmentPdf::text($bytes)];
 		}
 		if (MailAttachmentDocument::looksLikeZip($bytes)) {
 			return $this->documents->text($bytes);
 		}
-		if ($part->type !== self::HTML_TYPE && !in_array($part->type, self::TEXT_TYPES, true)) {
+		if ($part->type !== self::HTML_TYPE && !in_array($part->type, self::TEXT_TYPES, true)
+			&& (MailAttachmentPdf::looksLikePdf($bytes) || !mb_check_encoding($bytes, 'UTF-8')
+				|| preg_match('/[\x00-\x08\x0E-\x1F\x7F]/', $bytes) !== 0)) {
 			throw new ToolFailure(MailAttachmentMessages::unsupportedType());
 		}
 		$text = self::utf8($bytes, $part->charset);

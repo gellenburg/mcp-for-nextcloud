@@ -70,15 +70,15 @@ final class FilesImageToolsTest extends FilesToolsTestCase {
 			$this->failure('files_image_view', ['path' => '/Documentos/notes.txt']));
 	}
 
-	public function testImageViewRejectsOriginalOverByteLimitWhenPreviewMissing(): void {
-		$this->tree->addFile('/alice/files/Photos/big.png', str_repeat('P', 3 * 1024 * 1024), 'image/png');
+	public function testImageViewReturnsOriginalOverFormerByteLimitWhenPreviewMissing(): void {
+		$bytes = str_repeat('P', 3 * 1024 * 1024);
+		$this->tree->addFile('/alice/files/Photos/big.png', $bytes, 'image/png');
 		$this->previewManager->method('getPreview')->willThrowException(new \RuntimeException('no provider'));
-
-		self::assertSame(ImageMessages::imagePreviewTooLarge(),
-			$this->failure('files_image_view', ['path' => '/Photos/big.png']));
+		$result = $this->tool('files_image_view', ['path' => '/Photos/big.png']);
+		self::assertSame($bytes, base64_decode($result['content'][0]['data'], true));
 	}
 
-	public function testImagesViewHonorsBatchByteBudgetAndReportsSkipped(): void {
+	public function testImagesViewIgnoresLegacyBatchByteBudget(): void {
 		// Originals are large so the per-image fallback cannot bail the second and third out.
 		$big = str_repeat('A', 500 * 1024);
 		$this->tree->addFile('/alice/files/Photos/a.jpg', $big, 'image/jpeg');
@@ -92,10 +92,10 @@ final class FilesImageToolsTest extends FilesToolsTestCase {
 
 		// Count image content items (ignore metadata text items)
 		$imageItems = array_values(array_filter($result['content'], fn (array $c): bool => $c['type'] === 'image'));
-		self::assertCount(1, $imageItems);
+		self::assertCount(3, $imageItems);
 		$summary = json_decode($result['content'][array_key_last($result['content'])]['text'], true, 512, JSON_THROW_ON_ERROR);
-		self::assertSame(1, $summary['returned']);
-		self::assertCount(2, $summary['skipped']);
+		self::assertSame(3, $summary['returned']);
+		self::assertCount(0, $summary['skipped']);
 	}
 
 	public function testImagesViewRefusesWhenPathsAndFolderBothProvided(): void {

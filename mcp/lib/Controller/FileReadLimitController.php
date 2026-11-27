@@ -64,7 +64,8 @@ class FileReadLimitController extends Controller {
 		$php = $this->limit->phpMaxBytes();
 		return [
 			'configuredBytes' => $this->limit->configuredMaxBytes(),
-			'effectiveBytes' => $this->limit->maxBytes(),
+			'effectiveBytes' => null,
+			'nativeOnly' => true,
 			'phpBytes' => $php,
 			'ceilingBytes' => $unlimited ? null : FileReadLimit::ceilingBytes($php),
 			'phpUnlimited' => $unlimited,

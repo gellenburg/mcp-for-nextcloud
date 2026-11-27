@@ -75,9 +75,6 @@ final class ReplaceFileHandler {
 	public function plan(Folder $root, string $userId, string $path, string $old, string $new, ?string $etag): array {
 		$path = PathGuard::normalize($path);
 		$this->assertEditable($root, $path);
-		if (strlen($new) > FilesModule::MAX_EDIT_BYTES) {
-			throw new ToolFailure(EditingMessages::editTooLarge(FilesModule::MAX_EDIT_BYTES));
-		}
 		UniqueSnippet::assertText($old);
 		$file = $this->file($root, $path);
 		NodeAccess::checkEtag($file, $etag);
@@ -116,9 +113,6 @@ final class ReplaceFileHandler {
 	public function execute(Folder $root, string $userId, string $path, string $old, string $new, ?string $etag, bool $confirmed, FileBackup $backup): array {
 		$path = PathGuard::normalize($path);
 		$this->assertEditable($root, $path);
-		if (strlen($new) > FilesModule::MAX_EDIT_BYTES) {
-			throw new ToolFailure(EditingMessages::editTooLarge(FilesModule::MAX_EDIT_BYTES));
-		}
 		UniqueSnippet::assertText($old);
 		$file = $this->file($root, $path);
 		$this->locks?->assertWritable($file, $userId, $path);

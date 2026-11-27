@@ -35,7 +35,7 @@ final class ListedTreeCopy {
 			return ['node' => $node, 'listed' => false, 'partial' => false, 'created' => [$to], 'conflicts' => [], 'not_copied' => []];
 		}
 		$snapshot = $this->context->policy()->snapshot();
-		if ($manifest === null && $snapshot->isActive()) {
+		if ($manifest === null) {
 			$manifest = (new \OCA\Mcp\Modules\Files\Reorganization\FileTypePreflight($this->context))->inspect($source, $to, $snapshot, true);
 		}
 		if ($manifest === null) {
@@ -50,7 +50,6 @@ final class ListedTreeCopy {
 		}
 		$created = $conflicts = $missing = [];
 		$copiedRoot = null;
-		$bytes = 0;
 		$failedFolder = null;
 		foreach ($manifest['entries'] as $index => $entry) {
 			// DFS keeps descendants contiguous; skipping a failed subtree is linear, with no live lookup.
@@ -70,10 +69,6 @@ final class ListedTreeCopy {
 						return $parent->newFolder($this->name($entry['to']));
 					}, $this->context->visibilityGuard);
 				} else {
-					$bytes += max(0, (int)$node->getSize());
-					if ($bytes > \OCA\Mcp\Modules\Files\Reorganization\ReorganizationLimits::BYTES) {
-						throw new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\ReorganizationMessages::copyTooLarge(\OCA\Mcp\Modules\Files\Reorganization\ReorganizationLimits::BYTES));
-					}
 					$copy = $this->native($root, $node, $this->context->absolute($root, $entry['to']), $userId, $entry['to'], $entry);
 				}
 				$this->context->visibilityGuard?->assertVisible($copy);
@@ -87,7 +82,7 @@ final class ListedTreeCopy {
 				if ($created === []) {
 					throw ($e instanceof ToolFailure ? $e : new ToolFailure(\OCA\Mcp\Modules\Files\Presentation\ReorganizationMessages::moveFailed()));
 				}
-				if ($bytes > \OCA\Mcp\Modules\Files\Reorganization\ReorganizationLimits::BYTES || $this->stopsCopy($e)) {
+				if ($this->stopsCopy($e)) {
 					$missing = array_merge($missing, array_column(array_slice($manifest['entries'], $index + 1), 'to'));
 					break;
 				}
